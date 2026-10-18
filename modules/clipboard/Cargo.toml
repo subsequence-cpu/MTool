@@ -1,0 +1,11 @@
+[package]
+name = "mtool-clipboard"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+mtool-core.workspace = true
+mtool-storage.workspace = true
+sha2.workspace = true
+hex.workspace = true

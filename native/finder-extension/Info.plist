@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>dev.mtool.desktop.finder</string>
+  <key>CFBundleName</key>
+  <string>MToolFinder</string>
+  <key>CFBundleDisplayName</key>
+  <string>MTool 右键菜单</string>
+  <key>CFBundleExecutable</key>
+  <string>MToolFinder</string>
+  <key>CFBundlePackageType</key>
+  <string>XPC!</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleSupportedPlatforms</key>
+  <array><string>MacOSX</string></array>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>NSPrincipalClass</key>
+  <string>NSApplication</string>
+  <key>NSExtension</key>
+  <dict>
+    <key>NSExtensionAttributes</key>
+    <dict/>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.FinderSync</string>
+    <key>NSExtensionPrincipalClass</key>
+    <string>MToolFinderSync</string>
+  </dict>
+</dict>
+</plist>

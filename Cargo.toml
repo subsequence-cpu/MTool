@@ -1,0 +1,35 @@
+[workspace]
+members = ["native", "modules/core", "modules/platform", "modules/storage", "modules/clipboard", "modules/tools"]
+default-members = ["modules/core", "modules/storage", "modules/clipboard", "modules/tools"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.99.1"
+license = "MIT"
+
+[workspace.dependencies]
+mtool-core = { path = "modules/core" }
+mtool-platform = { path = "modules/platform" }
+mtool-storage = { path = "modules/storage" }
+mtool-clipboard = { path = "modules/clipboard" }
+mtool-tools = { path = "modules/tools" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+ts-rs = "11"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+hex = "0.4"
+getrandom = "0.3"
+zeroize = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "none"
+
+[profile.release.build-override]
+strip = "none"

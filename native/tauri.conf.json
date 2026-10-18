@@ -1,0 +1,79 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MTool",
+  "version": "0.1.0",
+  "identifier": "dev.mtool.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "MTool",
+        "width": 1060,
+        "height": 800,
+        "minWidth": 720,
+        "minHeight": 560,
+        "center": true,
+        "backgroundColor": "#282a36",
+        "theme": "Dark"
+      },
+      {
+        "label": "clipboard",
+        "create": false,
+        "url": "index.html?window=clipboard",
+        "title": "MTool · 剪贴板",
+        "width": 440,
+        "height": 570,
+        "minWidth": 380,
+        "minHeight": 380,
+        "visible": false,
+        "focus": false,
+        "visibleOnAllWorkspaces": true,
+        "center": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": true,
+        "backgroundColor": "#282a36",
+        "theme": "Dark"
+      },
+      {
+        "label": "clipboard-preview",
+        "create": false,
+        "url": "index.html?window=clipboard-preview",
+        "title": "MTool · 图片预览",
+        "width": 320,
+        "height": 320,
+        "visible": false,
+        "focus": false,
+        "focusable": false,
+        "visibleOnAllWorkspaces": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "backgroundColor": "#282a36",
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data: blob:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "shortDescription": "本地优先的程序员桌面工具箱",
+    "category": "DeveloperTool",
+    "icon": ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
+    "macOS": { "minimumSystemVersion": "13.0" },
+    "windows": { "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true } }
+  }
+}

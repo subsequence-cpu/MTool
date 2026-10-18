@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop",
+  "description": "本地界面所需的基础窗口与事件权限；不开放通用文件、网络或 Shell 能力",
+  "windows": ["main", "clipboard", "clipboard-preview"],
+  "permissions": ["core:default"]
+}

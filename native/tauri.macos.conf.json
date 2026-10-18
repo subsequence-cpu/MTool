@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "macOS": {
+      "files": { "PlugIns/MToolFinder.appex": "gen/finder/MToolFinder.appex" }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+[package]
+name = "mtool-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+default-run = "mtool-desktop"
+
+[lib]
+name = "mtool_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+mtool-core.workspace = true
+mtool-platform.workspace = true
+mtool-storage.workspace = true
+mtool-clipboard.workspace = true
+mtool-tools.workspace = true
+chrono.workspace = true
+base64.workspace = true
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.6", features = ["exception"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSScreen", "NSEvent", "NSApplication", "NSColor", "NSGraphics", "NSWorkspace", "NSRunningApplication"] }
+objc2-foundation = "0.3"
+
+core-foundation = "0.10"
+core-graphics = { version = "0.25", features = ["elcapitan"] }

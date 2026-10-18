@@ -1,0 +1,20 @@
+:root {
+  color-scheme: dark;
+  --background: #282a36;
+  --background-deep: #21222c;
+  --surface: #2e303e;
+  --surface-hover: #333544;
+  --selection: #44475a;
+  --foreground: #f8f8f2;
+  --muted: #adb6d1;
+  --border: #3c3f51;
+  --accent: #bd93f9;
+  --accent-soft: #383247;
+  --accent-foreground: #282a36;
+  --green: #50fa7b;
+  --cyan: #8be9fd;
+  --yellow: #f1fa8c;
+  --orange: #ffb86c;
+  --red: #ff5555;
+  --red-soft: #492f3b;
+}

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="180" y1="100" x2="840" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3c394e" />
+      <stop offset="0.5" stop-color="#282a36" />
+      <stop offset="1" stop-color="#1b1d28" />
+    </linearGradient>
+    <radialGradient
+      id="light"
+      cx="0"
+      cy="0"
+      r="1"
+      gradientTransform="translate(330 180) rotate(56) scale(690 610)"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#bd93f9" stop-opacity="0.16" />
+      <stop offset="1" stop-color="#bd93f9" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="edge" x1="240" y1="88" x2="760" y2="936" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e5d4ff" stop-opacity="0.3" />
+      <stop offset="0.5" stop-color="#c5b4e5" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#11131b" stop-opacity="0.6" />
+    </linearGradient>
+    <linearGradient id="top" x1="348" y1="280" x2="660" y2="536" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ead6ff" />
+      <stop offset="0.5" stop-color="#cfabff" />
+      <stop offset="1" stop-color="#b486f0" />
+    </linearGradient>
+    <linearGradient id="middle" x1="270" y1="470" x2="754" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b58be9" />
+      <stop offset="1" stop-color="#9370cc" />
+    </linearGradient>
+    <linearGradient id="bottom" x1="270" y1="580" x2="754" y2="752" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8e70b9" />
+      <stop offset="1" stop-color="#675389" />
+    </linearGradient>
+    <linearGradient id="accent" x1="546" y1="330" x2="654" y2="398" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b5f4ff" />
+      <stop offset="1" stop-color="#72d8eb" />
+    </linearGradient>
+    <path
+      id="top-face"
+      d="M270 378 482 256q30-18 60 0l212 122q24 14 0 28L542 528q-30 18-60 0L270 406q-24-14 0-28Z"
+    />
+    <path
+      id="middle-face"
+      d="m270 468 212 122q30 18 60 0l212-122v48L542 638q-30 18-60 0L270 516Z"
+    />
+    <path
+      id="bottom-face"
+      d="m270 580 212 122q30 18 60 0l212-122v48L542 750q-30 18-60 0L270 628Z"
+    />
+  </defs>
+  <rect x="88" y="102" width="848" height="834" rx="190" fill="#11131b" fill-opacity="0.24" />
+  <rect x="88" y="88" width="848" height="848" rx="190" fill="url(#tile)" />
+  <rect x="88" y="88" width="848" height="848" rx="190" fill="url(#light)" />
+  <rect
+    x="89"
+    y="89"
+    width="846"
+    height="846"
+    rx="189"
+    fill="none"
+    stroke="url(#edge)"
+    stroke-width="2"
+  />
+  <g transform="translate(0 12)" fill="#100e1c" fill-opacity="0.24">
+    <use href="#top-face" />
+    <use href="#middle-face" />
+    <use href="#bottom-face" />
+  </g>
+  <use href="#bottom-face" fill="url(#bottom)" />
+  <use href="#middle-face" fill="url(#middle)" />
+  <use href="#top-face" fill="url(#top)" />
+  <path
+    d="m270 378 212-122q30-18 60 0l212 122"
+    fill="none"
+    stroke="#f5eaff"
+    stroke-opacity="0.55"
+    stroke-width="2"
+  />
+  <path
+    d="m542 354 46-27q12-7 24 0l46 27q12 7 0 14l-46 27q-12 7-24 0l-46-27q-12-7 0-14Z"
+    fill="#745d9f"
+    fill-opacity="0.24"
+    transform="translate(0 4)"
+  />
+  <path
+    d="m542 354 46-27q12-7 24 0l46 27q12 7 0 14l-46 27q-12 7-24 0l-46-27q-12-7 0-14Z"
+    fill="url(#accent)"
+  />
+</svg>

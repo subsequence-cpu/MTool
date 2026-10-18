@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+Cargo.lock
+target
+dist
+node_modules
+ui/bindings/types.ts
+ui/bindings/catalog.ts
+native/gen
