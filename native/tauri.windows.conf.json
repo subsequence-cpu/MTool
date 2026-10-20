@@ -1,0 +1,11 @@
+{
+  "bundle": {
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      }
+    },
+    "icon": ["resources/common/icons/icon.png", "resources/windows/icons/icon.ico"]
+  }
+}

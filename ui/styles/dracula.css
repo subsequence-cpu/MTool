@@ -5,6 +5,11 @@
   --surface: #2e303e;
   --surface-hover: #333544;
   --selection: #44475a;
+  --editor-selection: #bd93f947;
+  --editor-selection-inactive: #bd93f926;
+  --editor-active-line: #ffffff04;
+  --scrollbar-thumb: #adb6d126;
+  --scrollbar-thumb-hover: #adb6d14d;
   --foreground: #f8f8f2;
   --muted: #adb6d1;
   --border: #3c3f51;

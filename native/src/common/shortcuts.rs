@@ -1,6 +1,6 @@
-use crate::{
+use crate::common::{
     state::{lock, AppState},
-    windows,
+    windowing,
 };
 use mtool_core::{AppError, Result, Settings};
 use std::sync::Arc;
@@ -92,9 +92,9 @@ pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
             let handle = app.clone();
             let queued = app.run_on_main_thread(move || {
                 let result = if clipboard {
-                    windows::show_clipboard(&handle)
+                    windowing::show_clipboard(&handle)
                 } else {
-                    windows::show_main(&handle)
+                    windowing::show_main(&handle)
                 };
                 if let Err(error) = result {
                     report_error(&handle, error);

@@ -1,7 +1,7 @@
-use crate::{
+use crate::common::{
     shortcuts,
     state::{lock, unavailable, AppState},
-    windows,
+    windowing,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use mtool_core::*;
@@ -289,7 +289,7 @@ pub async fn copy_output(
 
 #[tauri::command]
 pub fn open_clipboard(app: AppHandle) -> Result<()> {
-    windows::show_clipboard(&app)
+    windowing::show_clipboard(&app)
 }
 
 #[tauri::command]
@@ -297,7 +297,7 @@ pub fn close_clipboard(app: AppHandle, window: WebviewWindow) -> Result<()> {
     if window.label() != "clipboard" {
         return Err(AppError::new("forbidden", "仅剪贴板浮窗可关闭自身"));
     }
-    windows::hide_clipboard(&app)
+    windowing::hide_clipboard(&app)
 }
 
 #[tauri::command]
@@ -305,7 +305,7 @@ pub fn clipboard_visible(app: AppHandle, window: WebviewWindow) -> Result<bool> 
     if window.label() != "clipboard" {
         return Err(AppError::new("forbidden", "仅浮窗可检查自身状态"));
     }
-    windows::clipboard_visible(&app)
+    windowing::clipboard_visible(&app)
 }
 
 #[tauri::command]
@@ -313,7 +313,7 @@ pub fn drag_clipboard(app: AppHandle, window: WebviewWindow) -> Result<()> {
     if window.label() != "clipboard" {
         return Err(AppError::new("forbidden", "仅浮窗可移动自身"));
     }
-    windows::drag_clipboard(&app)
+    windowing::drag_clipboard(&app)
 }
 
 #[tauri::command]
@@ -336,7 +336,7 @@ pub async fn set_clipboard_preview(
             if let Ok(mut preview) = lock(&initial_state.preview) {
                 *preview = None;
             }
-            let _ = windows::hide_preview(&initial_app);
+            let _ = windowing::hide_preview(&initial_app);
         }
     })
     .map_err(|_| AppError::new("window_unavailable", "无法更新图片预览"))?;
@@ -366,7 +366,7 @@ pub async fn set_clipboard_preview(
     let handle = app.clone();
     app.run_on_main_thread(move || {
         if state.preview_generation.load(Ordering::Relaxed) != generation
-            || !windows::clipboard_visible(&handle).unwrap_or(false)
+            || !windowing::clipboard_visible(&handle).unwrap_or(false)
         {
             return;
         }
@@ -394,5 +394,5 @@ pub fn show_clipboard_preview(app: AppHandle, window: WebviewWindow, id: String)
     if window.label() != "clipboard-preview" {
         return Err(AppError::new("forbidden", "仅图片窗口可显示预览"));
     }
-    windows::show_preview(&app, &id)
+    windowing::show_preview(&app, &id)
 }

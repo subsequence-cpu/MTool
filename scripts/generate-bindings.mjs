@@ -6,7 +6,7 @@ for (const [name, example] of [
   ['mtool-core', 'export_bindings'],
   ['mtool-tools', 'export_catalog'],
 ]) {
-  const result = spawnSync('cargo', ['run', '-p', name, '--example', example], {
+  const result = spawnSync('cargo', ['run', '--release', '-p', name, '--example', example], {
     cwd,
     stdio: 'inherit',
   });

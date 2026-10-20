@@ -29,7 +29,15 @@ onMounted(() => {
         EditorView.lineWrapping,
         EditorState.readOnly.of(Boolean(props.readonly)),
         EditorView.editable.of(!props.readonly),
-        EditorView.contentAttributes.of({ 'aria-label': props.label, spellcheck: 'false' }),
+        EditorView.contentAttributes.of({
+          'aria-label': props.label,
+          'aria-readonly': String(Boolean(props.readonly)),
+          role: 'textbox',
+          'aria-multiline': 'true',
+          spellcheck: 'false',
+          tabindex: '0',
+        }),
+        EditorView.dragMovesSelection.of(() => false),
         language.of(props.json ? json() : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit('update:modelValue', update.state.doc.toString());
@@ -52,11 +60,16 @@ onMounted(() => {
             '.cm-scroller': {
               fontFamily: 'var(--font-mono)',
               lineHeight: '1.9',
+              overflow: 'auto',
+              overscrollBehavior: 'contain',
             },
             '.cm-content': {
               padding: '16px 0',
               minHeight: '310px',
               caretColor: 'var(--accent)',
+              userSelect: 'text',
+              WebkitUserSelect: 'text',
+              cursor: 'text',
             },
             '.cm-line': { padding: '0 16px' },
             '.cm-gutters': {
@@ -65,9 +78,15 @@ onMounted(() => {
               border: 'none',
             },
             '.cm-lineNumbers .cm-gutterElement': { paddingLeft: '12px' },
-            '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'var(--surface)' },
-            '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
-              backgroundColor: 'var(--selection)',
+            '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'transparent' },
+            '&.cm-focused .cm-activeLine, &.cm-focused .cm-activeLineGutter': {
+              backgroundColor: 'var(--editor-active-line)',
+            },
+            '.cm-selectionBackground': {
+              backgroundColor: 'var(--editor-selection-inactive)',
+            },
+            '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+              backgroundColor: 'var(--editor-selection)',
             },
             '&.cm-focused': { outline: 'none' },
             '.cm-cursor': { borderLeftColor: 'var(--accent)' },

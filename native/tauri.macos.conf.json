@@ -1,7 +1,11 @@
 {
   "bundle": {
     "macOS": {
-      "files": { "PlugIns/MToolFinder.appex": "gen/finder/MToolFinder.appex" }
-    }
+      "infoPlist": "resources/macos/Info.plist",
+      "files": {
+        "PlugIns/MToolFinder.appex": "gen/finder/MToolFinder.appex"
+      }
+    },
+    "icon": ["resources/common/icons/icon.png", "resources/macos/icons/icon.icns"]
   }
 }

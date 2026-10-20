@@ -1,6 +1,29 @@
 * {
   box-sizing: border-box;
 }
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
 body {
   margin: 0;
   background: var(--background);
@@ -643,12 +666,12 @@ textarea {
   font-size: 11px;
 }
 .code-editor {
-  min-height: 342px;
+  min-width: 0;
   max-width: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
-.cm-editor {
-  min-height: 342px;
+.code-editor .cm-editor {
+  height: clamp(342px, 48vh, 560px);
 }
 .diff-output {
   margin-top: 20px;

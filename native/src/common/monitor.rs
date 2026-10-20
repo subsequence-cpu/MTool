@@ -1,4 +1,4 @@
-use crate::state::{lock, AppState};
+use crate::common::state::{lock, AppState};
 use std::{
     sync::{atomic::Ordering, Arc},
     thread,

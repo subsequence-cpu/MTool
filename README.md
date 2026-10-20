@@ -51,6 +51,8 @@ pnpm install --frozen-lockfile
 pnpm desktop
 ```
 
+项目提供的桌面开发、类型生成、构建、Clippy 检查和打包命令统一使用 release 模式，
+
 ### 命令
 
 | 命令                 | 用途                                         |
@@ -111,16 +113,32 @@ pnpm desktop
 
 ```text
 MTool/
-├── ui/                  界面、交互与主题
-├── native/              应用入口、窗口、托盘、快捷键与系统集成
+├── ui/                         共用界面、交互与主题
+├── native/                     Tauri 桌面应用
+│   ├── src/
+│   │   ├── common/             IPC、状态、窗口流程、托盘、快捷键
+│   │   ├── macos/              NSPanel、Finder、macOS 右键菜单
+│   │   └── windows/            Windows 窗口适配与功能支持状态
+│   ├── resources/
+│   │   ├── common/             公共应用图标
+│   │   ├── macos/              Info.plist、macOS 图标、Finder 扩展
+│   │   └── windows/            Windows 图标资源
+│   ├── build_support/          平台构建辅助逻辑
+│   └── tauri*.conf.json        公共配置与平台配置
 ├── modules/
-│   ├── core/            共享类型与设置
-│   ├── platform/        平台接口与本地密钥
-│   ├── storage/         数据库与历史存储
-│   ├── clipboard/       剪贴板采集策略
-│   └── tools/           工具引擎与工具目录
-├── scripts/             类型生成、打包与签名
-├── .github/workflows/   CI 与安装包构建
+│   ├── core/                   共享类型与设置
+│   ├── platform/src/
+│   │   ├── common/             通用剪贴板读写、图片处理、本地密钥
+│   │   ├── macos/              macOS 剪贴板适配
+│   │   └── windows/            Windows 剪贴板适配与变更监听
+│   ├── storage/                数据库与历史存储
+│   ├── clipboard/              剪贴板采集策略
+│   └── tools/                  工具引擎与工具目录
+├── scripts/
+│   ├── macos/                  macOS 开发签名配置
+│   ├── generate-bindings.mjs   类型与工具目录生成
+│   └── package.mjs             统一打包入口
+├── .github/workflows/          CI 与安装包构建
 ├── Cargo.toml
 ├── package.json
 └── Makefile

@@ -1,4 +1,4 @@
-use crate::{state::AppState, windows};
+use crate::common::{state::AppState, windowing};
 use mtool_core::{AppError, Result};
 use objc2::{
     define_class, msg_send, rc::Retained, runtime::ProtocolObject, DefinedClass, MainThreadMarker,
@@ -77,7 +77,7 @@ define_class!(
                         if !state.stop.load(Ordering::Relaxed)
                             && state.clipboard_focused.swap(false, Ordering::Relaxed)
                         {
-                            let _ = windows::hide_clipboard(&queued);
+                            let _ = windowing::hide_clipboard(&queued);
                         }
                     }
                 }
@@ -94,7 +94,7 @@ define_class!(
         #[unsafe(method(windowShouldClose:))]
         fn should_close(&self, _sender: &objc2_app_kit::NSWindow) -> bool {
             if self.ivars().interactive {
-                let _ = windows::hide_clipboard(&self.ivars().app);
+                let _ = windowing::hide_clipboard(&self.ivars().app);
             }
             false
         }
@@ -104,7 +104,7 @@ define_class!(
 impl PanelDelegate {
     fn sync_preview(&self) {
         if self.ivars().interactive {
-            let _ = windows::sync_preview(&self.ivars().app);
+            let _ = windowing::sync_preview(&self.ivars().app);
         }
     }
 }

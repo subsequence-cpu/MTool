@@ -72,8 +72,9 @@
     "targets": "all",
     "shortDescription": "本地优先的程序员桌面工具箱",
     "category": "DeveloperTool",
-    "icon": ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
-    "macOS": { "minimumSystemVersion": "13.0" },
-    "windows": { "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true } }
+    "icon": ["resources/common/icons/icon.png"],
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    }
   }
 }

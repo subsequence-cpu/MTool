@@ -5,11 +5,11 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "desktop": "tauri dev",
+    "desktop": "tauri dev --release",
     "build": "vue-tsc --noEmit && vite build",
     "tauri": "tauri",
     "package": "node scripts/package.mjs",
-    "signing:setup": "node scripts/setup-macos-signing.mjs",
+    "signing:setup": "node scripts/macos/setup-signing.mjs",
     "typecheck": "vue-tsc --noEmit",
     "bindings": "node scripts/generate-bindings.mjs",
     "format": "prettier --write .",

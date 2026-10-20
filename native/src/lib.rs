@@ -1,18 +1,17 @@
-mod commands;
-mod context_menu;
+mod common;
 #[cfg(target_os = "macos")]
-mod finder;
-mod monitor;
-#[cfg(target_os = "macos")]
-mod panels;
-mod shortcuts;
-mod state;
-mod tray;
+mod macos;
+#[cfg(windows)]
 mod windows;
 
+use common::{commands, context_menu, monitor, shortcuts, state, tray, windowing};
+#[cfg(target_os = "macos")]
+use macos as platform;
 use state::{lock, AppState};
 use std::sync::{atomic::Ordering, Arc};
 use tauri::Manager;
+#[cfg(windows)]
+use windows as platform;
 
 pub fn run() {
     #[cfg(target_os = "macos")]
@@ -43,7 +42,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(context_menu::ContextMenuState::default())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            let _ = windows::show_main(app);
+            let _ = windowing::show_main(app);
         }))
         .plugin(shortcuts::plugin())
         .plugin(
@@ -54,8 +53,6 @@ pub fn run() {
         .setup(|app| {
             let state = Arc::new(AppState::initialize(&app.path().app_data_dir()?));
             app.manage(state.clone());
-            // WebView2 can invoke commands before setup finishes. Register the
-            // shared state before creating any window that can bootstrap the UI.
             for config in &app.config().app.windows {
                 tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.build()?;
             }
@@ -64,7 +61,7 @@ pub fn run() {
             }
             tray::setup(app)?;
             #[cfg(target_os = "macos")]
-            panels::prepare(app.handle())?;
+            macos::panels::prepare(app.handle())?;
             monitor::start(app.handle().clone(), state);
             if std::env::args().any(|arg| arg == "--autostart") {
                 if let Some(window) = app.get_webview_window("main") {
@@ -101,7 +98,7 @@ pub fn run() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
                 if window.label() == "clipboard" {
-                    let _ = windows::hide_clipboard(window.app_handle());
+                    let _ = windowing::hide_clipboard(window.app_handle());
                 } else {
                     let _ = window.hide();
                 }
@@ -114,7 +111,7 @@ pub fn run() {
                     } else if !window.is_focused().unwrap_or(true)
                         && state.clipboard_focused.swap(false, Ordering::Relaxed)
                     {
-                        let _ = windows::hide_clipboard(window.app_handle());
+                        let _ = windowing::hide_clipboard(window.app_handle());
                     }
                 }
             }
@@ -122,7 +119,7 @@ pub fn run() {
             tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_)
                 if window.label() == "clipboard" =>
             {
-                let _ = windows::sync_preview(window.app_handle());
+                let _ = windowing::sync_preview(window.app_handle());
             }
             _ => {}
         })
@@ -130,10 +127,10 @@ pub fn run() {
         .expect("MTool application could not be initialized")
         .run(|app, event| match event {
             #[cfg(target_os = "macos")]
-            tauri::RunEvent::Opened { urls } => context_menu::open_urls(app, urls),
+            tauri::RunEvent::Opened { urls } => macos::context_menu::open_urls(app, urls),
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => {
-                if let Err(error) = windows::show_main(app) {
+                if let Err(error) = windowing::show_main(app) {
                     eprintln!("Could not reopen the main window: {}", error.message);
                 }
             }
@@ -142,7 +139,7 @@ pub fn run() {
                     state.stop.store(true, Ordering::Relaxed);
                 }
                 #[cfg(target_os = "macos")]
-                panels::shutdown();
+                macos::panels::shutdown();
             }
             _ => {}
         });

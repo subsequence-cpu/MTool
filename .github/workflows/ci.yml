@@ -39,5 +39,5 @@ jobs:
       - name: Verify generated contracts
         run: git diff --exit-code -- ui/bindings
       - run: pnpm build
-      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - run: cargo build -p mtool-desktop --locked
+      - run: cargo clippy --release --workspace --all-targets --locked -- -D warnings
+      - run: cargo build --release -p mtool-desktop --locked
