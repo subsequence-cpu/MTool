@@ -1,8 +1,5 @@
 use mtool_core::{AppError, ContextMenuStatus, Result};
 
-#[derive(Default)]
-pub(crate) struct State;
-
 pub(crate) fn settings() -> Result<()> {
     Err(AppError::new("unsupported", "仅支持 macOS"))
 }

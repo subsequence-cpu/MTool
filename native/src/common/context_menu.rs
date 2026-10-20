@@ -6,6 +6,7 @@ use tauri::{State, WebviewWindow};
 #[derive(Default)]
 pub struct ContextMenuState {
     pub(crate) error: Mutex<Option<AppError>>,
+    #[cfg(target_os = "macos")]
     pub(crate) platform: platform::context_menu::State,
 }
 
