@@ -15,24 +15,25 @@ export function useHistory(withDetails = true) {
   const detail = ref<ClipboardDetail | null>(null);
   const detailError = ref('');
   let generation = 0;
+  let nextOffset = 0;
   let detailGeneration = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   async function load(append = false): Promise<void> {
     if (!desktopAvailable || !appState.status?.storageReady) return;
+    if (append && (loading.value || !hasMore.value)) return;
+    const offset = append ? nextOffset : 0;
     const current = ++generation;
     loading.value = true;
     error.value = '';
     try {
-      const page = await client.history(
-        query.value,
-        pinnedOnly.value,
-        append ? items.value.length : 0,
-      );
+      const page = await client.history(query.value, pinnedOnly.value, offset);
       if (current !== generation) return;
-      items.value = append ? [...items.value, ...page.items] : page.items;
+      const records = append ? [...items.value, ...page.items] : page.items;
+      items.value = [...new Map(records.map((item) => [item.id, item])).values()];
+      nextOffset = offset + page.items.length;
       total.value = page.total;
-      hasMore.value = page.hasMore;
+      hasMore.value = page.hasMore && page.items.length > 0;
       if (!items.value.some((item) => item.id === selected.value))
         selected.value = items.value[0]?.id ?? null;
       const latest = items.value.find((item) => item.id === selected.value);

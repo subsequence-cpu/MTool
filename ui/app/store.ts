@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { client, desktopAvailable, errorMessage } from '../bindings/client';
 import { catalog } from '../bindings/catalog';
 import { defaultSettings } from '../bindings/types';
-import type { AppStatus, Settings, ToolId } from '../bindings/types';
+import type { AppStatus, MouseSettings, Settings, ToolId } from '../bindings/types';
 
 export const appState = reactive({
   tools: [...catalog],
@@ -102,6 +102,14 @@ export function rememberTool(id: ToolId): void {
   void updatePreferences((current) => ({
     recentTools: [id, ...current.recentTools.filter((item) => item !== id)].slice(0, 8),
   })).catch((error: unknown) => notify(errorMessage(error), true));
+}
+
+export function updateMousePreferences(mouse: MouseSettings): Promise<void> {
+  const update = preferencesQueue.then(async () => {
+    appState.settings = await client.mouseUpdateSettings(mouse);
+  });
+  preferencesQueue = update.catch(() => {});
+  return update;
 }
 
 export async function toggleFavorite(id: ToolId): Promise<void> {

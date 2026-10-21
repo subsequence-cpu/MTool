@@ -6,6 +6,9 @@ fn main() -> std::io::Result<()> {
     let declarations = [
         AppError::decl(),
         ContextMenuStatus::decl(),
+        MouseAction::decl(),
+        MouseSettings::decl(),
+        MouseStatus::decl(),
         ToolId::decl(),
         ToolOperation::decl(),
         ToolDefinition::decl(),

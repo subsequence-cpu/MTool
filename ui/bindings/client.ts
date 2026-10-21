@@ -5,6 +5,8 @@ import type {
   ClipboardDetail,
   ClipboardPage,
   ContextMenuStatus,
+  MouseStatus,
+  MouseSettings,
   Settings,
   ToolRequest,
   ToolResponse,
@@ -45,6 +47,12 @@ export const client = {
   contextMenuSettings: (): Promise<void> => native('context_menu_settings'),
   contextMenuAccessibilitySettings: (): Promise<void> =>
     native('context_menu_accessibility_settings'),
+  mouseStatus: (): Promise<MouseStatus> => native('mouse_status'),
+  mouseUpdateSettings: (mouse: MouseSettings): Promise<Settings> =>
+    native('mouse_update_settings', { mouse }),
+  mouseCaptureButton: (active = true): Promise<void> => native('mouse_capture_button', { active }),
+  mouseInputMonitoringSettings: (): Promise<void> => native('mouse_input_monitoring_settings'),
+  mouseAccessibilitySettings: (): Promise<void> => native('mouse_accessibility_settings'),
 };
 
 export function errorMessage(error: unknown): string {

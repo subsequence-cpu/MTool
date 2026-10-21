@@ -50,6 +50,97 @@ pub struct ContextMenuStatus {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
+pub enum MouseAction {
+    Default,
+    Back,
+    Forward,
+    MissionControl,
+    ShowDesktop,
+    QuickLook,
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MouseSettings {
+    pub enabled: bool,
+    pub smooth_scrolling: bool,
+    pub reverse_vertical: bool,
+    pub reverse_horizontal: bool,
+    pub scroll_speed: f64,
+    pub smooth_duration_ms: u32,
+    pub middle_button: MouseAction,
+    pub back_button: MouseAction,
+    pub forward_button: MouseAction,
+    pub extra_buttons: BTreeMap<u16, MouseAction>,
+}
+
+impl Default for MouseSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            smooth_scrolling: true,
+            reverse_vertical: false,
+            reverse_horizontal: false,
+            scroll_speed: 1.0,
+            smooth_duration_ms: 180,
+            middle_button: MouseAction::Default,
+            back_button: MouseAction::Back,
+            forward_button: MouseAction::Forward,
+            extra_buttons: BTreeMap::new(),
+        }
+    }
+}
+
+impl MouseSettings {
+    pub fn button_action(&self, button: u16) -> MouseAction {
+        match button {
+            3 => self.middle_button,
+            4 => self.back_button,
+            5 => self.forward_button,
+            _ => self
+                .extra_buttons
+                .get(&button)
+                .copied()
+                .unwrap_or(MouseAction::Default),
+        }
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        if self
+            .extra_buttons
+            .keys()
+            .any(|button| !(6..=32).contains(button))
+        {
+            return Err(AppError::invalid("额外鼠标按键编号需在 6–32 之间"));
+        }
+        if !self.scroll_speed.is_finite() || !(0.25..=4.0).contains(&self.scroll_speed) {
+            return Err(AppError::invalid("滚动速度需在 0.25–4 倍之间"));
+        }
+        if !(80..=400).contains(&self.smooth_duration_ms) {
+            return Err(AppError::invalid("平滑时长需在 80–400 毫秒之间"));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct MouseStatus {
+    pub supported: bool,
+    pub accessibility_granted: bool,
+    pub error: Option<String>,
+    pub capturing: bool,
+    pub last_button: Option<u16>,
+    pub button_sequence: u32,
+    pub logitech_device: Option<String>,
+    pub logitech_buttons: Vec<u16>,
+    pub logitech_error: Option<String>,
+    pub input_monitoring_granted: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "kebab-case")]
 pub enum ToolId {
     Json,
     Base64,
@@ -173,6 +264,7 @@ pub struct ClipboardDetail {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
+    pub mouse: MouseSettings,
     pub history_limit: u32,
     pub retention_days: u32,
     pub max_storage_mb: u32,
@@ -188,6 +280,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            mouse: MouseSettings::default(),
             history_limit: 1000,
             retention_days: 30,
             max_storage_mb: 512,
@@ -204,6 +297,7 @@ impl Default for Settings {
 
 impl Settings {
     pub fn validate(&self) -> Result<()> {
+        self.mouse.validate()?;
         if !(50..=10_000).contains(&self.history_limit)
             || !(1..=365).contains(&self.retention_days)
             || !(16..=2048).contains(&self.max_storage_mb)

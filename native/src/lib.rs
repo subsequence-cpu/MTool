@@ -4,7 +4,7 @@ mod macos;
 #[cfg(windows)]
 mod windows;
 
-use common::{commands, context_menu, monitor, shortcuts, state, tray, windowing};
+use common::{commands, context_menu, monitor, mouse, shortcuts, state, tray, windowing};
 #[cfg(target_os = "macos")]
 use macos as platform;
 use state::{lock, AppState};
@@ -53,6 +53,7 @@ pub fn run() {
         .setup(|app| {
             let state = Arc::new(AppState::initialize(&app.path().app_data_dir()?));
             app.manage(state.clone());
+            app.manage(mouse::MouseService::new(state.settings()?.mouse));
             for config in &app.config().app.windows {
                 tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.build()?;
             }
@@ -92,7 +93,12 @@ pub fn run() {
             commands::show_clipboard_preview,
             context_menu::context_menu_status,
             context_menu::context_menu_settings,
-            context_menu::context_menu_accessibility_settings
+            context_menu::context_menu_accessibility_settings,
+            mouse::mouse_status,
+            mouse::mouse_update_settings,
+            mouse::mouse_capture_button,
+            mouse::mouse_input_monitoring_settings,
+            mouse::mouse_accessibility_settings
         ])
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
@@ -135,6 +141,9 @@ pub fn run() {
                 }
             }
             tauri::RunEvent::Exit => {
+                if let Some(mouse) = app.try_state::<mouse::MouseService>() {
+                    mouse.shutdown();
+                }
                 if let Some(state) = app.try_state::<Arc<AppState>>() {
                     state.stop.store(true, Ordering::Relaxed);
                 }

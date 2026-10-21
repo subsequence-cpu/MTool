@@ -1,5 +1,6 @@
 pub(crate) mod context_menu;
 pub(crate) mod finder;
+pub(crate) mod mouse;
 pub(crate) mod panels;
 pub(crate) mod windowing;
 

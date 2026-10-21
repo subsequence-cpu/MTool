@@ -31,4 +31,5 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["std", 
 objc2-foundation = "0.3"
 
 core-foundation = "0.10"
-core-graphics = { version = "0.25", features = ["elcapitan"] }
+core-graphics = { version = "0.25", features = ["elcapitan", "highsierra"] }
+hidapi = { version = "2.6.7", default-features = false, features = ["macos-shared-device"] }

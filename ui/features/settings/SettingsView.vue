@@ -10,6 +10,10 @@ import type { Settings } from '../../bindings/types';
 const form = ref<Settings>(
   structuredClone({
     ...appState.settings,
+    mouse: {
+      ...appState.settings.mouse,
+      extraButtons: { ...appState.settings.mouse.extraButtons },
+    },
     excludedApps: [...appState.settings.excludedApps],
     favorites: [...appState.settings.favorites],
     recentTools: [...appState.settings.recentTools],
@@ -32,11 +36,12 @@ async function save(): Promise<void> {
       .split('\n')
       .map((name) => name.trim())
       .filter(Boolean);
-    await updatePreferences({
+    await updatePreferences((current) => ({
       ...form.value,
-      favorites: [...appState.settings.favorites],
-      recentTools: [...appState.settings.recentTools],
-    });
+      mouse: current.mouse,
+      favorites: [...current.favorites],
+      recentTools: [...current.recentTools],
+    }));
     await refreshStatus();
     saved.value = true;
     notify('设置已保存');

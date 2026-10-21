@@ -2,6 +2,12 @@ export type AppError = { code: string, message: string, };
 
 export type ContextMenuStatus = { supported: boolean, bundled: boolean, enabled: boolean, vscodeInstalled: boolean, accessibilityGranted: boolean, error: string | null, };
 
+export type MouseAction = "default" | "back" | "forward" | "mission-control" | "show-desktop" | "quick-look" | "none";
+
+export type MouseSettings = { enabled: boolean, smoothScrolling: boolean, reverseVertical: boolean, reverseHorizontal: boolean, scrollSpeed: number, smoothDurationMs: number, middleButton: MouseAction, backButton: MouseAction, forwardButton: MouseAction, extraButtons: { [key in number]?: MouseAction }, };
+
+export type MouseStatus = { supported: boolean, accessibilityGranted: boolean, error: string | null, capturing: boolean, lastButton: number | null, buttonSequence: number, logitechDevice: string | null, logitechButtons: Array<number>, logitechError: string | null, inputMonitoringGranted: boolean, };
+
 export type ToolId = "json" | "base64" | "url" | "unicode" | "hex" | "timestamp" | "hash" | "jwt" | "uuid" | "text" | "diff" | "regex";
 
 export type ToolOperation = { id: string, label: string, };
@@ -18,7 +24,7 @@ export type ClipboardItem = { id: string, kind: ClipboardKind, preview: string, 
 
 export type ClipboardDetail = { item: ClipboardItem, text: string | null, imageDataUrl: string | null, };
 
-export type Settings = { historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
+export type Settings = { mouse: MouseSettings, historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
 
 export type AppStatus = { platform: string, storageReady: boolean, storageError: string | null, captureEnabled: boolean, captureError: string | null, shortcutError: string | null, version: string, };
 
@@ -27,6 +33,18 @@ export type Bootstrap = { tools: Array<ToolDefinition>, settings: Settings, stat
 export type ClipboardPage = { items: Array<ClipboardItem>, total: number, hasMore: boolean, };
 
 export const defaultSettings: Settings = {
+  "mouse": {
+    "enabled": false,
+    "smoothScrolling": true,
+    "reverseVertical": false,
+    "reverseHorizontal": false,
+    "scrollSpeed": 1.0,
+    "smoothDurationMs": 180,
+    "middleButton": "default",
+    "backButton": "back",
+    "forwardButton": "forward",
+    "extraButtons": {}
+  },
   "historyLimit": 1000,
   "retentionDays": 30,
   "maxStorageMb": 512,

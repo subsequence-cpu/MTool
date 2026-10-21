@@ -30,7 +30,10 @@ onUnmounted(() => window.removeEventListener('keydown', focusSearch));
 </script>
 
 <template>
-  <div class="app-shell">
+  <div
+    class="app-shell"
+    :class="{ 'clipboard-shell': router.currentRoute.value.path === '/clipboard' }"
+  >
     <header class="app-header">
       <RouterLink to="/" class="brand" aria-label="MTool 首页"
         ><img class="brand-mark" :src="appIcon" alt="" /><span>MTool</span
@@ -63,9 +66,5 @@ onUnmounted(() => window.removeEventListener('keydown', focusSearch));
       <AppIcon name="arrow-right" :size="14"
     /></RouterLink>
     <main class="app-main"><slot /></main>
-    <footer class="app-footer">
-      <span>MTool {{ appState.status?.version ?? '0.1.0' }}</span>
-      <span>{{ isMac ? '⌘' : 'Ctrl' }} K 搜索工具</span>
-    </footer>
   </div>
 </template>

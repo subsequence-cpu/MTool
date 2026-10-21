@@ -116,6 +116,31 @@ svg {
   display: flex;
   flex-direction: column;
 }
+.app-shell.clipboard-shell {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.clipboard-shell > .app-header,
+.clipboard-shell > .environment-banner {
+  flex-shrink: 0;
+}
+.clipboard-shell .app-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.clipboard-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.clipboard-page > .page-heading,
+.clipboard-page > .history-toolbar,
+.clipboard-page > .inline-notice {
+  flex-shrink: 0;
+}
 .app-header {
   padding: 19px 32px;
   display: flex;
@@ -176,24 +201,6 @@ svg {
   max-width: 1440px;
   margin: 0 auto;
   padding: 32px 48px 40px;
-}
-.app-footer {
-  padding: 13px 32px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 11px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-}
-.app-footer > span {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-}
-.app-footer svg {
-  color: var(--green);
 }
 .environment-banner {
   padding: 9px 32px;
@@ -847,13 +854,31 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  min-height: 460px;
+  flex: 1;
+  min-height: 0;
 }
 .history-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   padding: 8px;
   border-right: 1px solid var(--border);
 }
+.history-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 4px;
+}
+.history-pagination {
+  min-height: 1px;
+}
 .history-count {
+  flex-shrink: 0;
   font-size: 11px;
   color: var(--muted);
   padding: 7px 10px 12px;
@@ -907,6 +932,9 @@ textarea {
 .history-detail {
   padding: 24px;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .history-text {
   padding: 16px;
@@ -1328,24 +1356,6 @@ fieldset:disabled textarea {
   font-size: 11px;
   padding: 30px 0 0;
 }
-.feature-roadmap {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 26px;
-}
-.feature-roadmap h2 {
-  font-size: 16px;
-  margin-bottom: 10px;
-}
-.feature-roadmap p {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 9px;
-}
 @media (max-width: 900px) {
   .app-main {
     padding: 28px 28px 35px;
@@ -1412,10 +1422,6 @@ fieldset:disabled textarea {
     border-left: 0;
     border-top: 1px solid var(--border);
   }
-  .app-footer {
-    flex-wrap: wrap;
-    padding: 12px 17px;
-  }
   .environment-banner {
     padding: 10px 17px;
   }
@@ -1427,6 +1433,7 @@ fieldset:disabled textarea {
   }
   .history-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(140px, 0.9fr) minmax(0, 1.1fr);
   }
   .history-list {
     border-right: 0;
@@ -1441,10 +1448,6 @@ fieldset:disabled textarea {
   }
   .shortcut-field {
     width: 100%;
-  }
-  .feature-roadmap {
-    flex-direction: column;
-    padding: 20px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

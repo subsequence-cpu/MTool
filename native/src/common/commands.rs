@@ -6,7 +6,7 @@ use crate::common::{
 use base64::{engine::general_purpose::STANDARD, Engine};
 use mtool_core::*;
 use std::sync::{atomic::Ordering, Arc};
-use tauri::{AppHandle, Emitter, State, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 use tauri_plugin_autostart::ManagerExt;
 
 #[tauri::command]
@@ -102,6 +102,10 @@ pub async fn save_settings(
         }
         if changed {
             *lock(&state.shortcut_error)? = None;
+        }
+        if previous.mouse != settings.mouse {
+            app.state::<super::mouse::MouseService>()
+                .configure(settings.mouse.clone());
         }
         let _ = app.emit("settings-changed", ());
         let _ = app.emit("clipboard-changed", ());

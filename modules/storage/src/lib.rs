@@ -59,7 +59,7 @@ impl Store {
         }
         if version == 0 {
             connection
-                .execute_batch(include_str!("../migrations/001_initial.sql"))
+                .execute_batch(include_str!("../schema.sql"))
                 .map_err(database_error)?;
         }
         Ok(Self { connection })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { appState, notify, updatePreferences } from '../../app/store';
 import { client, desktopAvailable, errorMessage } from '../../bindings/client';
@@ -26,6 +26,48 @@ const {
 const confirmation = ref<'delete' | 'clear' | null>(null);
 const busy = ref(false);
 const destination = ref('json');
+
+const historyScroll = ref<HTMLElement>();
+const paginationTarget = ref<HTMLElement>();
+let paginationObserver: IntersectionObserver | undefined;
+
+function loadMoreNearEnd(): void {
+  const root = historyScroll.value;
+  if (
+    root &&
+    root.scrollHeight - root.scrollTop - root.clientHeight <= 160 &&
+    hasMore.value &&
+    !loading.value &&
+    !error.value
+  )
+    void load(true);
+}
+
+watch(
+  [historyScroll, paginationTarget],
+  ([root, target]) => {
+    paginationObserver?.disconnect();
+    if (!root || !target) return;
+    paginationObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) loadMoreNearEnd();
+      },
+      { root, rootMargin: '0px 0px 160px 0px' },
+    );
+    paginationObserver.observe(target);
+  },
+  { flush: 'post' },
+);
+
+watch([loading, hasMore], loadMoreNearEnd, { flush: 'post' });
+watch(
+  [query, pinnedOnly],
+  () => {
+    historyScroll.value?.scrollTo({ top: 0 });
+  },
+  { flush: 'post' },
+);
+onBeforeUnmount(() => paginationObserver?.disconnect());
 
 async function action(callback: () => Promise<void>, message?: string): Promise<void> {
   if (busy.value) return;
@@ -135,26 +177,40 @@ function pinSelected(): void {
     <div v-else class="history-layout">
       <section class="history-list" aria-label="剪贴板历史">
         <p class="history-count" aria-live="polite">
-          {{ loading ? '正在加载…' : `${total} 条记录` }}
+          {{ !items.length && loading ? '正在加载…' : `${total} 条记录` }}
         </p>
-        <button
-          v-for="item in items"
-          :key="item.id"
-          class="history-row"
-          :class="{ selected: selected === item.id }"
-          :aria-pressed="selected === item.id"
-          @click="selected = item.id"
+        <div
+          ref="historyScroll"
+          class="history-scroll"
+          role="region"
+          aria-label="剪贴板记录列表"
+          tabindex="0"
+          :aria-busy="loading"
         >
-          <AppIcon :name="item.kind === 'image' ? 'image' : 'text'" :size="18" /><span
-            class="history-row-copy"
-            ><strong>{{ item.preview }}</strong
-            ><span
-              >{{ item.sourceApp ?? '来源未知' }} · {{ formatDate(item.updatedAt) }}</span
-            ></span
-          ><AppIcon v-if="item.pinned" name="pin" :size="14" /></button
-        ><button v-if="hasMore" class="button load-more" :disabled="loading" @click="load(true)">
-          <AppIcon name="chevron-down" />加载更多
-        </button>
+          <button
+            v-for="item in items"
+            :key="item.id"
+            class="history-row"
+            :class="{ selected: selected === item.id }"
+            :aria-pressed="selected === item.id"
+            @click="selected = item.id"
+          >
+            <AppIcon :name="item.kind === 'image' ? 'image' : 'text'" :size="18" /><span
+              class="history-row-copy"
+              ><strong>{{ item.preview }}</strong
+              ><span
+                >{{ item.sourceApp ?? '来源未知' }} · {{ formatDate(item.updatedAt) }}</span
+              ></span
+            ><AppIcon v-if="item.pinned" name="pin" :size="14" />
+          </button>
+          <div ref="paginationTarget" class="history-pagination">
+            <button v-if="hasMore" class="button load-more" :disabled="loading" @click="load(true)">
+              <AppIcon :name="loading ? 'clock' : 'chevron-down'" />{{
+                error ? '重试加载' : loading ? '加载中…' : '加载更多'
+              }}
+            </button>
+          </div>
+        </div>
       </section>
       <section class="history-detail">
         <p v-if="detailError" class="inline-notice error" role="alert">{{ detailError }}</p>
