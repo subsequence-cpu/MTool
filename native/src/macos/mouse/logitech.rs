@@ -1,10 +1,12 @@
 use super::{EventSender, Message, Runtime};
-use mtool_core::{MouseAction, MouseSettings};
+use mtool_core::{MouseAction, MouseDpi, MouseSettings};
 use std::{
     collections::BTreeMap,
     ffi::CString,
+    hash::{DefaultHasher, Hash, Hasher},
     sync::{
         atomic::{AtomicBool, Ordering},
+        mpsc::{Receiver, SyncSender},
         Arc, Mutex,
     },
     thread::{self, JoinHandle},
@@ -16,6 +18,13 @@ mod discovery;
 mod hidpp;
 use discovery::{Discovered, Discovery};
 
+pub(super) struct DpiRequest {
+    pub id: String,
+    pub value: u16,
+    pub deadline: Instant,
+    pub response: SyncSender<Result<MouseDpi, String>>,
+}
+
 pub(super) struct Service {
     settings: Arc<Mutex<MouseSettings>>,
     stop: Arc<AtomicBool>,
@@ -23,7 +32,12 @@ pub(super) struct Service {
 }
 
 impl Service {
-    pub fn new(settings: MouseSettings, runtime: Arc<Mutex<Runtime>>, sender: EventSender) -> Self {
+    pub fn new(
+        settings: MouseSettings,
+        runtime: Arc<Mutex<Runtime>>,
+        sender: EventSender,
+        dpi_receiver: Receiver<DpiRequest>,
+    ) -> Self {
         let settings = Arc::new(Mutex::new(settings));
         let stop = Arc::new(AtomicBool::new(false));
         let worker_settings = settings.clone();
@@ -32,9 +46,13 @@ impl Service {
         let worker = thread::Builder::new()
             .name("mtool-logitech".into())
             .spawn(move || {
-                if let Err(error) =
-                    run(worker_settings, worker_stop, worker_runtime.clone(), sender)
-                {
+                if let Err(error) = run(
+                    worker_settings,
+                    worker_stop,
+                    worker_runtime.clone(),
+                    sender,
+                    dpi_receiver,
+                ) {
                     if let Ok(mut state) = worker_runtime.lock() {
                         state.logitech_error = Some(error);
                     }
@@ -79,11 +97,66 @@ struct Session {
     name: String,
 }
 
+fn dpi_id(key: &DeviceKey, sensor: u8) -> String {
+    let mut hash = DefaultHasher::new();
+    key.hash(&mut hash);
+    format!("{:016x}-{sensor}", hash.finish())
+}
+
+fn dpi_status(key: &DeviceKey, session: &Session, dpi: &hidpp::SensorDpi) -> MouseDpi {
+    MouseDpi {
+        id: dpi_id(key, dpi.sensor),
+        name: if session.connection.dpi.len() > 1 {
+            format!("{} · 传感器 {}", session.name, dpi.sensor + 1)
+        } else {
+            session.name.clone()
+        },
+        current: dpi.current,
+        values: dpi.values.clone(),
+    }
+}
+
+fn dpi_devices(sessions: &BTreeMap<DeviceKey, Session>) -> Vec<MouseDpi> {
+    sessions
+        .iter()
+        .flat_map(|(key, session)| {
+            session
+                .connection
+                .dpi
+                .iter()
+                .map(|dpi| dpi_status(key, session, dpi))
+        })
+        .collect()
+}
+
+fn apply_dpi(
+    sessions: &mut BTreeMap<DeviceKey, Session>,
+    request: &DpiRequest,
+) -> Result<MouseDpi, String> {
+    if Instant::now() >= request.deadline {
+        return Err("DPI 设置请求已超时，请重试".into());
+    }
+    for (key, session) in sessions {
+        if let Some(index) = session
+            .connection
+            .dpi
+            .iter()
+            .position(|dpi| dpi_id(key, dpi.sensor) == request.id)
+        {
+            let sensor = session.connection.dpi[index].sensor;
+            session.connection.set_dpi(sensor, request.value)?;
+            return Ok(dpi_status(key, session, &session.connection.dpi[index]));
+        }
+    }
+    Err("鼠标已断开或不支持硬件 DPI 调节".into())
+}
+
 fn run(
     settings: Arc<Mutex<MouseSettings>>,
     stop: Arc<AtomicBool>,
     runtime: Arc<Mutex<Runtime>>,
     sender: EventSender,
+    dpi_receiver: Receiver<DpiRequest>,
 ) -> Result<(), String> {
     let discovery = Discovery::new(stop.clone())?;
     let mut sessions: BTreeMap<DeviceKey, Session> = BTreeMap::new();
@@ -104,6 +177,14 @@ fn run(
                     discovery_error = error;
                 }
             }
+        }
+        if let Ok(request) = dpi_receiver.try_recv() {
+            let result = apply_dpi(&mut sessions, &request);
+            if let Ok(mut state) = runtime.lock() {
+                state.logitech_dpi = dpi_devices(&sessions);
+            }
+            let _ = request.response.try_send(result);
+            publish_devices = true;
         }
         let configure = Instant::now() >= next_configure;
         let current = settings
@@ -145,6 +226,7 @@ fn run(
                     disconnected.push(key.clone());
                 }
             }
+            publish_devices |= session.connection.take_dpi_changed();
         }
         if !disconnected.is_empty() {
             let _ = sender.send(Message::LogitechDisconnected);
@@ -169,6 +251,7 @@ fn run(
                     .collect();
                 state.logitech_buttons.sort_unstable();
                 state.logitech_buttons.dedup();
+                state.logitech_dpi = dpi_devices(&sessions);
                 if sessions.is_empty() && error.is_none() {
                     state.logitech_error = discovery_error.clone();
                 }
@@ -177,7 +260,11 @@ fn run(
         }
         if error.is_some() || (configure && !sessions.is_empty()) {
             if let Ok(mut state) = runtime.lock() {
-                state.logitech_error = error;
+                state.logitech_error = error.or_else(|| {
+                    sessions
+                        .values()
+                        .find_map(|session| session.connection.dpi_error.clone())
+                });
             }
         }
         if configure {

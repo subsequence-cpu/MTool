@@ -112,7 +112,7 @@ fn discover(
             let indices: &[u8] = if bluetooth {
                 &[0xff]
             } else {
-                &[1, 2, 3, 4, 5, 6]
+                &[0xff, 1, 2, 3, 4, 5, 6]
             };
             for index in indices {
                 if stop.load(Ordering::Relaxed) {

@@ -126,6 +126,15 @@ impl MouseSettings {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+pub struct MouseDpi {
+    pub id: String,
+    pub name: String,
+    pub current: u16,
+    pub values: Vec<u16>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 pub struct MouseStatus {
     pub supported: bool,
     pub accessibility_granted: bool,
@@ -135,6 +144,7 @@ pub struct MouseStatus {
     pub button_sequence: u32,
     pub logitech_device: Option<String>,
     pub logitech_buttons: Vec<u16>,
+    pub logitech_dpi: Vec<MouseDpi>,
     pub logitech_error: Option<String>,
     pub input_monitoring_granted: bool,
 }

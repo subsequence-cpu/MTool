@@ -19,6 +19,8 @@ export const appState = reactive({
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 let initializePromise: Promise<void> | undefined;
 let preferencesQueue = Promise.resolve();
+let preferencesVersion = 0;
+let refreshGeneration = 0;
 
 export function notify(message: string, error = false): void {
   appState.toast = message;
@@ -71,7 +73,16 @@ export function initialize(): Promise<void> {
 }
 
 async function refresh(): Promise<void> {
+  const generation = ++refreshGeneration;
+  let pending: Promise<void>;
+  do {
+    pending = preferencesQueue;
+    await pending;
+  } while (pending !== preferencesQueue);
+  if (generation !== refreshGeneration) return;
+  const version = preferencesVersion;
   const data = await client.bootstrap();
+  if (generation !== refreshGeneration || version !== preferencesVersion) return;
   appState.settings = data.settings;
   appState.status = data.status;
 }
@@ -83,6 +94,7 @@ export async function refreshStatus(): Promise<void> {
 export function updatePreferences(
   patch: Partial<Settings> | ((current: Settings) => Partial<Settings>),
 ): Promise<void> {
+  preferencesVersion += 1;
   const update = preferencesQueue.then(async () => {
     const settings = {
       ...appState.settings,
@@ -105,6 +117,7 @@ export function rememberTool(id: ToolId): void {
 }
 
 export function updateMousePreferences(mouse: MouseSettings): Promise<void> {
+  preferencesVersion += 1;
   const update = preferencesQueue.then(async () => {
     appState.settings = await client.mouseUpdateSettings(mouse);
   });

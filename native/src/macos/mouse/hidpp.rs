@@ -44,10 +44,20 @@ pub(super) struct Connection {
     software_id: u8,
     index: u8,
     feature: u8,
+    dpi_feature: u8,
+    pub dpi: Vec<SensorDpi>,
+    pub dpi_error: Option<String>,
+    dpi_changed: bool,
     controls: Vec<(u16, u16)>,
     diverted: BTreeSet<u16>,
     active: BTreeSet<u16>,
     pending: VecDeque<Vec<u8>>,
+}
+
+pub(super) struct SensorDpi {
+    pub sensor: u8,
+    pub current: u16,
+    pub values: Vec<u16>,
 }
 
 impl Connection {
@@ -57,6 +67,10 @@ impl Connection {
             software_id: 0x0d,
             index,
             feature: 0,
+            dpi_feature: 0,
+            dpi: Vec::new(),
+            dpi_error: None,
+            dpi_changed: false,
             controls: Vec::new(),
             diverted: BTreeSet::new(),
             active: BTreeSet::new(),
@@ -64,10 +78,11 @@ impl Connection {
         };
         let root = connection.request(0, 0, &[0x1b, 0x04, 0])?;
         connection.feature = root[0];
-        if connection.feature == 0 {
-            return Err("设备不支持 HID++ 可编程按键".into());
-        }
-        let count = connection.request(connection.feature, 0, &[])?[0].min(32);
+        let count = if connection.feature != 0 {
+            connection.request(connection.feature, 0, &[])?[0].min(32)
+        } else {
+            0
+        };
         let discovery_deadline = Instant::now() + Duration::from_secs(2);
         for offset in 0..count {
             if Instant::now() > discovery_deadline {
@@ -82,14 +97,108 @@ impl Connection {
                 connection.controls.push((cid, button));
             }
         }
-        if connection.controls.is_empty() {
-            return Err("未发现可接入的罗技额外按键".into());
+        let dpi = connection
+            .request(0, 0, &[0x22, 0x01, 0])
+            .and_then(|reply| {
+                connection.dpi_feature = reply[0];
+                if connection.dpi_feature != 0 {
+                    connection.discover_dpi()?;
+                }
+                Ok(())
+            });
+        if let Err(reason) = dpi {
+            connection.dpi.clear();
+            connection.dpi_error = Some(reason);
+        }
+        if connection.controls.is_empty() && connection.dpi.is_empty() {
+            return Err("未发现支持的罗技按键或硬件 DPI 功能".into());
         }
         Ok(connection)
     }
 
     pub fn buttons(&self) -> Vec<u16> {
         self.controls.iter().map(|(_, button)| *button).collect()
+    }
+
+    fn discover_dpi(&mut self) -> Result<(), String> {
+        let count = self.request(self.dpi_feature, 0, &[])?[0];
+        if !(1..=8).contains(&count) {
+            return Err("罗技 DPI 传感器数量无效".into());
+        }
+        for sensor in 0..count {
+            let list = self.request(self.dpi_feature, 1, &[sensor])?;
+            if list.first() != Some(&sensor) {
+                return Err("罗技 DPI 档位响应无效".into());
+            }
+            let values = dpi_values(&list[1..])?;
+            let current = self.read_dpi(sensor)?;
+            if !values.contains(&current) {
+                return Err("罗技当前 DPI 不在设备支持的档位中".into());
+            }
+            self.dpi.push(SensorDpi {
+                sensor,
+                current,
+                values,
+            });
+        }
+        Ok(())
+    }
+
+    fn read_dpi(&mut self, sensor: u8) -> Result<u16, String> {
+        let reply = self.request(self.dpi_feature, 2, &[sensor])?;
+        if reply.len() < 5 || reply[0] != sensor {
+            return Err("罗技 DPI 响应无效".into());
+        }
+        let current = u16::from_be_bytes([reply[1], reply[2]]);
+        let current = if current == 0 {
+            u16::from_be_bytes([reply[3], reply[4]])
+        } else {
+            current
+        };
+        if current == 0 {
+            return Err("无法读取罗技当前 DPI".into());
+        }
+        Ok(current)
+    }
+
+    pub fn take_dpi_changed(&mut self) -> bool {
+        std::mem::take(&mut self.dpi_changed)
+    }
+
+    fn dpi_notification(&mut self, report: &[u8]) {
+        if self.dpi_feature == 0
+            || report.len() < 7
+            || !matches!(report[0], 0x10 | 0x11)
+            || report[1..4] != [self.index, self.dpi_feature, 0]
+        {
+            return;
+        }
+        let value = u16::from_be_bytes([report[5], report[6]]);
+        if let Some(dpi) = self
+            .dpi
+            .iter_mut()
+            .find(|dpi| dpi.sensor == report[4] && dpi.values.contains(&value))
+        {
+            self.dpi_changed |= dpi.current != value;
+            dpi.current = value;
+        }
+    }
+
+    pub fn set_dpi(&mut self, sensor: u8, value: u16) -> Result<(), String> {
+        let Some(index) = self.dpi.iter().position(|dpi| dpi.sensor == sensor) else {
+            return Err("未找到罗技 DPI 传感器".into());
+        };
+        if !self.dpi[index].values.contains(&value) {
+            return Err("DPI 不在设备支持的档位中".into());
+        }
+        let [high, low] = value.to_be_bytes();
+        self.request(self.dpi_feature, 3, &[sensor, high, low])?;
+        let current = self.read_dpi(sensor)?;
+        self.dpi[index].current = current;
+        if current != value {
+            return Err("鼠标未应用该 DPI，请检查板载配置或其他鼠标软件".into());
+        }
+        Ok(())
     }
 
     fn request(&mut self, feature: u8, function: u8, params: &[u8]) -> Result<Vec<u8>, String> {
@@ -113,6 +222,7 @@ impl Connection {
             if response_matches(report, &request) {
                 return Ok(report[4..].to_vec());
             }
+            self.dpi_notification(report);
             if report.len() >= 7
                 && report[1] == self.index
                 && report[2] == 0xff
@@ -184,6 +294,7 @@ impl Connection {
                 }
                 &buffer[..length]
             };
+            self.dpi_notification(report);
             if let Some(next) = button_state(report, self.index, self.feature) {
                 for cid in self.active.difference(&next) {
                     if self.diverted.contains(cid) {
@@ -217,6 +328,42 @@ impl Connection {
         }
         failure.map_or(Ok(()), Err)
     }
+}
+
+fn dpi_values(bytes: &[u8]) -> Result<Vec<u16>, String> {
+    let mut values = BTreeSet::new();
+    let mut words = bytes.as_chunks::<2>().0.iter();
+    let mut previous = 0;
+    while let Some(bytes) = words.next() {
+        let value = u16::from_be_bytes([bytes[0], bytes[1]]);
+        if value == 0 {
+            break;
+        }
+        if value & 0xe000 == 0xe000 {
+            let step = value & 0x1fff;
+            let end = words.next().ok_or("罗技 DPI 范围不完整")?;
+            let end = u16::from_be_bytes([end[0], end[1]]);
+            if previous == 0 || step == 0 || end <= previous || end >= 0xe000 {
+                return Err("罗技 DPI 范围无效".into());
+            }
+            for value in ((u32::from(previous) + u32::from(step))..=u32::from(end))
+                .step_by(usize::from(step))
+            {
+                values.insert(value as u16);
+                if values.len() > 4096 {
+                    return Err("罗技 DPI 档位过多".into());
+                }
+            }
+            previous = end;
+        } else {
+            values.insert(value);
+            previous = value;
+        }
+    }
+    if values.len() < 2 {
+        return Err("罗技 DPI 档位列表无效".into());
+    }
+    Ok(values.into_iter().collect())
 }
 
 impl Drop for Connection {

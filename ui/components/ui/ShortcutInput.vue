@@ -9,21 +9,22 @@ const editing = ref(false);
 const input = ref<HTMLInputElement>();
 const button = ref<HTMLButtonElement>();
 const keys = computed(() => shortcutKeys(model.value, props.isMac));
-let previous = '';
+const draft = ref('');
 
 async function edit(): Promise<void> {
-  previous = model.value;
+  draft.value = model.value;
   editing.value = true;
   await nextTick();
   input.value?.focus({ preventScroll: true });
   input.value?.select();
 }
 
-async function finish(cancel = false): Promise<void> {
-  if (cancel) model.value = previous;
+async function finish(cancel = false, restoreFocus = true): Promise<void> {
+  if (!editing.value) return;
+  if (!cancel) model.value = draft.value.trim();
   editing.value = false;
   await nextTick();
-  button.value?.focus({ preventScroll: true });
+  if (restoreFocus) button.value?.focus({ preventScroll: true });
 }
 </script>
 
@@ -32,31 +33,33 @@ async function finish(cancel = false): Promise<void> {
     <input
       v-if="editing"
       ref="input"
-      v-model="model"
+      v-model="draft"
       class="shortcut-input"
       :aria-label="label"
       maxlength="100"
       autocomplete="off"
       spellcheck="false"
       title="使用 + 连接按键，例如 Alt+Space；Esc 取消编辑"
-      @blur="editing = false"
+      @blur="finish(false, false)"
+      @keydown.stop
       @keydown.enter.prevent="finish()"
       @keydown.esc.prevent="finish(true)"
     />
-    <button
-      v-else
-      ref="button"
-      type="button"
-      class="shortcut-display"
-      :aria-label="`${label}：${keys.join(' ')}，点击编辑`"
-      title="编辑快捷键"
-      @click="edit"
-    >
+    <span v-else class="shortcut-display" :aria-label="`${label}：${keys.join(' ')}`">
       <span class="shortcut-keycaps" aria-hidden="true">
         <kbd v-for="(key, index) in keys" :key="index">{{ key }}</kbd>
         <span v-if="!keys.length" class="muted">设置快捷键</span>
       </span>
-      <AppIcon name="pencil" :size="14" />
-    </button>
+      <button
+        ref="button"
+        type="button"
+        class="shortcut-edit"
+        :aria-label="`修改${label}：${keys.join(' ')}`"
+        title="修改快捷键"
+        @click="edit"
+      >
+        <AppIcon name="pencil" :size="14" />
+      </button>
+    </span>
   </span>
 </template>

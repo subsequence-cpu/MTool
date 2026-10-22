@@ -6,6 +6,7 @@ import type {
   ClipboardPage,
   ContextMenuStatus,
   MouseStatus,
+  MouseDpi,
   MouseSettings,
   Settings,
   ToolRequest,
@@ -48,6 +49,8 @@ export const client = {
   contextMenuAccessibilitySettings: (): Promise<void> =>
     native('context_menu_accessibility_settings'),
   mouseStatus: (): Promise<MouseStatus> => native('mouse_status'),
+  mouseSetDpi: (id: string, value: number): Promise<MouseDpi> =>
+    native('mouse_set_dpi', { id, value }),
   mouseUpdateSettings: (mouse: MouseSettings): Promise<Settings> =>
     native('mouse_update_settings', { mouse }),
   mouseCaptureButton: (active = true): Promise<void> => native('mouse_capture_button', { active }),

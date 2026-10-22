@@ -6,7 +6,9 @@ export type MouseAction = "default" | "back" | "forward" | "mission-control" | "
 
 export type MouseSettings = { enabled: boolean, smoothScrolling: boolean, reverseVertical: boolean, reverseHorizontal: boolean, scrollSpeed: number, smoothDurationMs: number, middleButton: MouseAction, backButton: MouseAction, forwardButton: MouseAction, extraButtons: { [key in number]?: MouseAction }, };
 
-export type MouseStatus = { supported: boolean, accessibilityGranted: boolean, error: string | null, capturing: boolean, lastButton: number | null, buttonSequence: number, logitechDevice: string | null, logitechButtons: Array<number>, logitechError: string | null, inputMonitoringGranted: boolean, };
+export type MouseDpi = { id: string, name: string, current: number, values: Array<number>, };
+
+export type MouseStatus = { supported: boolean, accessibilityGranted: boolean, error: string | null, capturing: boolean, lastButton: number | null, buttonSequence: number, logitechDevice: string | null, logitechButtons: Array<number>, logitechDpi: Array<MouseDpi>, logitechError: string | null, inputMonitoringGranted: boolean, };
 
 export type ToolId = "json" | "base64" | "url" | "unicode" | "hex" | "timestamp" | "hash" | "jwt" | "uuid" | "text" | "diff" | "regex";
 

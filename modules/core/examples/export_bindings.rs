@@ -8,6 +8,7 @@ fn main() -> std::io::Result<()> {
         ContextMenuStatus::decl(),
         MouseAction::decl(),
         MouseSettings::decl(),
+        MouseDpi::decl(),
         MouseStatus::decl(),
         ToolId::decl(),
         ToolOperation::decl(),

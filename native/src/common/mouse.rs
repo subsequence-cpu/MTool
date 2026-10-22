@@ -1,6 +1,6 @@
 #[cfg(not(target_os = "macos"))]
 use mtool_core::MouseSettings;
-use mtool_core::{MouseStatus, Result};
+use mtool_core::{MouseDpi, MouseStatus, Result};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 
@@ -28,6 +28,7 @@ impl MouseService {
             button_sequence: 0,
             logitech_device: None,
             logitech_buttons: Vec::new(),
+            logitech_dpi: Vec::new(),
             logitech_error: None,
             input_monitoring_granted: false,
         }
@@ -35,12 +36,40 @@ impl MouseService {
 
     pub fn shutdown(&self) {}
 
+    pub fn set_dpi(&self, _id: String, _value: u16) -> Result<MouseDpi> {
+        Err(mtool_core::AppError::new(
+            "unsupported",
+            "硬件 DPI 调节目前仅支持 macOS 罗技鼠标",
+        ))
+    }
+
     pub fn capture(&self, _active: bool) -> Result<()> {
         Err(mtool_core::AppError::new(
             "unsupported",
             "鼠标增强目前仅支持 macOS",
         ))
     }
+}
+
+#[tauri::command]
+pub async fn mouse_set_dpi(
+    app: AppHandle,
+    window: WebviewWindow,
+    id: String,
+    value: u16,
+) -> Result<MouseDpi> {
+    if window.label() != "main" {
+        return Err(mtool_core::AppError::new(
+            "forbidden",
+            "请在主窗口调整硬件 DPI",
+        ));
+    }
+    if id.len() > 64 || value == 0 {
+        return Err(mtool_core::AppError::invalid("DPI 设置无效"));
+    }
+    tauri::async_runtime::spawn_blocking(move || app.state::<MouseService>().set_dpi(id, value))
+        .await
+        .map_err(|_| mtool_core::AppError::new("task_failed", "DPI 设置失败"))?
 }
 
 #[tauri::command]

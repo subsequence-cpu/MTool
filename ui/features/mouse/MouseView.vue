@@ -5,6 +5,8 @@ import { client, desktopAvailable, errorMessage } from '../../bindings/client';
 import { defaultSettings } from '../../bindings/types';
 import type { MouseAction, MouseSettings, MouseStatus } from '../../bindings/types';
 import AppIcon from '../../components/ui/AppIcon.vue';
+import MouseSlider from './MouseSlider.vue';
+import LogitechDpiControl from './LogitechDpiControl.vue';
 
 const form = ref<MouseSettings>({
   ...appState.settings.mouse,
@@ -209,7 +211,7 @@ onUnmounted(() => {
       <h1>鼠标增强</h1>
       <div class="mouse-heading-actions">
         <button v-if="error && dirty" class="button ghost" type="button" @click="save">重试</button>
-        <button class="button ghost" type="button" :disabled="!editable" @click="reset">
+        <button class="button" type="button" :disabled="!editable" @click="reset">
           <AppIcon name="reset" />恢复默认
         </button>
       </div>
@@ -252,6 +254,29 @@ onUnmounted(() => {
           </div>
         </div>
       </section>
+      <section
+        v-if="status?.logitechDpi.length"
+        class="settings-section"
+        aria-labelledby="mouse-dpi-heading"
+      >
+        <h2 id="mouse-dpi-heading">硬件 DPI</h2>
+        <div class="settings-card">
+          <LogitechDpiControl
+            v-for="device in status.logitechDpi"
+            :key="device.id"
+            :device="device"
+            :disabled="!desktopAvailable || !status.inputMonitoringGranted"
+            @updated="
+              (updated) => {
+                if (status)
+                  status.logitechDpi = status.logitechDpi.map((item) =>
+                    item.id === updated.id ? updated : item,
+                  );
+              }
+            "
+          />
+        </div>
+      </section>
       <form @submit.prevent>
         <fieldset :disabled="!editable">
           <section class="settings-section" aria-labelledby="mouse-scroll-heading">
@@ -269,37 +294,29 @@ onUnmounted(() => {
                   ><strong>滚动速度</strong
                   ><span class="setting-description">相对于系统滚动距离</span></span
                 >
-                <span class="mouse-slider">
-                  <input
-                    v-model.number="form.scrollSpeed"
-                    type="range"
-                    min="0.25"
-                    max="4"
-                    step="0.05"
-                    :style="{ '--range-progress': `${((form.scrollSpeed - 0.25) / 3.75) * 100}%` }"
-                  />
-                  <output>{{ form.scrollSpeed.toFixed(2) }}×</output>
-                </span>
+                <MouseSlider
+                  v-model="form.scrollSpeed"
+                  :min="0.25"
+                  :max="4"
+                  :step="0.05"
+                  :value-text="`${form.scrollSpeed.toFixed(2)}×`"
+                  label="滚动速度"
+                />
               </label>
               <label class="setting-row">
                 <span
                   ><strong>平滑时长</strong
                   ><span class="setting-description">较短更跟手，较长更柔和</span></span
                 >
-                <span class="mouse-slider">
-                  <input
-                    v-model.number="form.smoothDurationMs"
-                    type="range"
-                    min="80"
-                    max="400"
-                    step="10"
-                    :disabled="!form.smoothScrolling"
-                    :style="{
-                      '--range-progress': `${((form.smoothDurationMs - 80) / 320) * 100}%`,
-                    }"
-                  />
-                  <output>{{ form.smoothDurationMs }} ms</output>
-                </span>
+                <MouseSlider
+                  v-model="form.smoothDurationMs"
+                  :min="80"
+                  :max="400"
+                  :step="10"
+                  :value-text="`${form.smoothDurationMs} ms`"
+                  label="平滑时长"
+                  :disabled="!form.smoothScrolling"
+                />
               </label>
               <label class="setting-row">
                 <span
@@ -313,8 +330,7 @@ onUnmounted(() => {
                 <input v-model="form.reverseHorizontal" class="switch" type="checkbox" />
               </label>
               <p class="setting-footnote">
-                仅处理非连续滚轮事件，触控板与 Magic Mouse 保持系统滚动。⌘ / ⌃ / ⌥
-                配合滚轮时保留应用原有行为。
+                仅调整普通鼠标滚轮。触控板、Magic Mouse 和 ⌘ / ⌃ / ⌥＋滚轮不受影响。
               </p>
             </div>
           </section>
@@ -322,7 +338,7 @@ onUnmounted(() => {
             <div class="context-section-heading">
               <h2 id="mouse-buttons-heading">按键映射</h2>
               <button
-                class="button"
+                class="button small"
                 type="button"
                 :disabled="captureStarting"
                 @click="capturePending ? cancelCapture() : captureButton()"
@@ -385,72 +401,6 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
 }
-.mouse-slider {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 250px;
-  flex-shrink: 0;
-}
-.mouse-slider input {
-  appearance: none;
-  min-width: 0;
-  width: 100%;
-  height: 24px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.mouse-slider input::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent) var(--range-progress),
-    var(--selection) var(--range-progress)
-  );
-}
-.mouse-slider input::-webkit-slider-thumb {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 18%);
-}
-.mouse-slider input::-moz-range-track {
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--accent) var(--range-progress),
-    var(--selection) var(--range-progress)
-  );
-}
-.mouse-slider input::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 18%);
-}
-.mouse-slider input:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.mouse-slider output {
-  min-width: 62px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: var(--muted);
-}
 .mouse-action-select {
   width: 250px;
   flex-shrink: 0;
@@ -467,7 +417,6 @@ onUnmounted(() => {
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 @media (max-width: 800px) {
-  .mouse-slider,
   .mouse-action-select {
     width: 190px;
   }

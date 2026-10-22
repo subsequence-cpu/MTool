@@ -11,7 +11,7 @@ use core_graphics::{
     event::{CGEvent, CGEventFlags, CGEventTapLocation, EventField, KeyCode, ScrollEventUnit},
     event_source::{CGEventSource, CGEventSourceStateID},
 };
-use mtool_core::{MouseAction, MouseSettings, MouseStatus};
+use mtool_core::{MouseAction, MouseDpi, MouseSettings, MouseStatus};
 use std::{
     ffi::c_void,
     panic::{catch_unwind, AssertUnwindSafe},
@@ -91,6 +91,7 @@ struct Runtime {
     button_sequence: u32,
     logitech_device: Option<String>,
     logitech_buttons: Vec<u16>,
+    logitech_dpi: Vec<MouseDpi>,
     logitech_error: Option<String>,
 }
 
@@ -110,6 +111,7 @@ impl Runtime {
             button_sequence: self.button_sequence,
             logitech_device: self.logitech_device.clone(),
             logitech_buttons: self.logitech_buttons.clone(),
+            logitech_dpi: self.logitech_dpi.clone(),
             logitech_error: self.logitech_error.clone(),
             input_monitoring_granted: unsafe { CGPreflightListenEventAccess() },
         }
@@ -167,12 +169,14 @@ pub(crate) struct MouseService {
     sender: EventSender,
     runtime: Arc<Mutex<Runtime>>,
     worker: Mutex<Option<JoinHandle<()>>>,
+    dpi_sender: mpsc::SyncSender<logitech::DpiRequest>,
 }
 
 impl MouseService {
     pub fn new(settings: MouseSettings) -> Self {
         use core_foundation::runloop::{CFRunLoopSourceContext, CFRunLoopSourceCreate};
         let (channel, receiver) = mpsc::channel();
+        let (dpi_sender, dpi_receiver) = mpsc::sync_channel(4);
         let mut context = CFRunLoopSourceContext {
             version: 0,
             info: ptr::null_mut(),
@@ -199,7 +203,15 @@ impl MouseService {
         let worker_sender = sender.clone();
         let worker = thread::Builder::new()
             .name("mtool-mouse".into())
-            .spawn(move || run(settings, receiver, worker_sender, worker_runtime));
+            .spawn(move || {
+                run(
+                    settings,
+                    receiver,
+                    worker_sender,
+                    worker_runtime,
+                    dpi_receiver,
+                )
+            });
         let worker = match worker {
             Ok(worker) => Some(worker),
             Err(error) => {
@@ -211,6 +223,7 @@ impl MouseService {
             sender,
             runtime,
             worker: Mutex::new(worker),
+            dpi_sender,
         }
     }
 
@@ -222,6 +235,24 @@ impl MouseService {
                 Some("鼠标服务已停止，请重新启动 MTool".into()),
             );
         }
+    }
+
+    pub fn set_dpi(&self, id: String, value: u16) -> mtool_core::Result<MouseDpi> {
+        let (response, receiver) = mpsc::sync_channel(1);
+        self.dpi_sender
+            .try_send(logitech::DpiRequest {
+                id,
+                value,
+                deadline: Instant::now() + Duration::from_secs(2),
+                response,
+            })
+            .map_err(|_| {
+                mtool_core::AppError::new("dpi_unavailable", "DPI 服务繁忙或已停止，请重试")
+            })?;
+        receiver
+            .recv_timeout(Duration::from_secs(3))
+            .map_err(|_| mtool_core::AppError::new("dpi_timeout", "DPI 设置超时，请检查鼠标连接"))?
+            .map_err(|reason| mtool_core::AppError::new("dpi_failed", reason))
     }
 
     pub fn status(&self) -> MouseStatus {
@@ -390,11 +421,17 @@ fn run(
     receiver: mpsc::Receiver<Message>,
     sender: EventSender,
     runtime: Arc<Mutex<Runtime>>,
+    dpi_receiver: mpsc::Receiver<logitech::DpiRequest>,
 ) {
     let run_loop = CFRunLoop::get_current();
     let _ = sender.run_loop.set(run_loop.clone());
     run_loop.add_source(&sender.source.0, unsafe { kCFRunLoopDefaultMode });
-    let logitech = logitech::Service::new(settings.clone(), runtime.clone(), sender.clone());
+    let logitech = logitech::Service::new(
+        settings.clone(),
+        runtime.clone(),
+        sender.clone(),
+        dpi_receiver,
+    );
     let mut tap: Option<Tap> = None;
     let mut next_check = Instant::now();
     loop {

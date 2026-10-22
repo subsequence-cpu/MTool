@@ -95,6 +95,7 @@ pub fn run() {
             context_menu::context_menu_settings,
             context_menu::context_menu_accessibility_settings,
             mouse::mouse_status,
+            mouse::mouse_set_dpi,
             mouse::mouse_update_settings,
             mouse::mouse_capture_button,
             mouse::mouse_input_monitoring_settings,
