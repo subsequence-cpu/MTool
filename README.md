@@ -4,7 +4,7 @@
   <p>开发工具 · 剪贴板 · Finder 扩展 · 鼠标增强</p>
   <p><strong>macOS · Windows</strong></p>
   <p>
-    <code>Rust</code> · <code>Tauri 2</code> · <code>Vue 3</code> · <code>TypeScript</code> · <code>Dracula</code>
+    <code>Rust</code> · <code>Tauri 2</code> · <code>Vue 3</code> · <code>TypeScript</code> · <code>Tailwind CSS</code>
   </p>
 </div>
 
@@ -19,6 +19,7 @@
 | 剪贴板      | 文本与图片历史、搜索、收藏、滚动加载、快捷浮窗       |
 | 历史管理    | 暂停记录、应用排除、容量限制、过期清理               |
 | 桌面集成    | 全局快捷键、托盘、登录启动                           |
+| 主题        | Dracula / GitHub Light                               |
 | Finder 扩展 | 新增文件、文件名编辑、使用 VS Code 打开；仅 macOS    |
 | 鼠标增强    | 平滑滚动、按键映射、空间手势、罗技硬件 DPI；仅 macOS |
 

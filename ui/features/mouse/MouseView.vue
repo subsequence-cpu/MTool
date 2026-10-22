@@ -206,8 +206,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="mouse-page">
-    <header class="page-heading">
+  <section class="mouse-page mx-auto max-w-[900px]">
+    <header
+      class="page-heading mb-[25px] flex items-start justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <h1>鼠标增强</h1>
       <div class="mouse-heading-actions">
         <button v-if="error && dirty" class="button ghost" type="button" @click="save">重试</button>
@@ -226,16 +228,22 @@ onUnmounted(() => {
       {{ error || statusError || status?.error }}
     </p>
     <template v-if="!status || status.supported">
-      <section class="settings-section" aria-label="鼠标增强开关与权限">
-        <div class="settings-card">
-          <label class="setting-row">
+      <section class="settings-section mt-7 [&>h2]:mb-3" aria-label="鼠标增强开关与权限">
+        <div
+          class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+        >
+          <label
+            class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+          >
             <span>
               <strong>开启鼠标增强</strong>
               <span class="setting-description">调整后自动生效，关闭主窗口后仍在后台运行</span>
             </span>
             <input v-model="form.enabled" class="switch" type="checkbox" :disabled="!editable" />
           </label>
-          <div class="setting-row">
+          <div
+            class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+          >
             <div>
               <strong>辅助功能权限</strong>
               <p>
@@ -256,11 +264,13 @@ onUnmounted(() => {
       </section>
       <section
         v-if="status?.logitechDpi.length"
-        class="settings-section"
+        class="settings-section mt-7 [&>h2]:mb-3"
         aria-labelledby="mouse-dpi-heading"
       >
         <h2 id="mouse-dpi-heading">硬件 DPI</h2>
-        <div class="settings-card">
+        <div
+          class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+        >
           <LogitechDpiControl
             v-for="device in status.logitechDpi"
             :key="device.id"
@@ -279,17 +289,23 @@ onUnmounted(() => {
       </section>
       <form @submit.prevent>
         <fieldset :disabled="!editable">
-          <section class="settings-section" aria-labelledby="mouse-scroll-heading">
+          <section class="settings-section mt-7 [&>h2]:mb-3" aria-labelledby="mouse-scroll-heading">
             <h2 id="mouse-scroll-heading">滚轮</h2>
-            <div class="settings-card">
-              <label class="setting-row">
+            <div
+              class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+            >
+              <label
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <span
                   ><strong>平滑滚动</strong
                   ><span class="setting-description">将滚轮刻度转为连续的像素滚动</span></span
                 >
                 <input v-model="form.smoothScrolling" class="switch" type="checkbox" />
               </label>
-              <label class="setting-row">
+              <label
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <span
                   ><strong>滚动速度</strong
                   ><span class="setting-description">相对于系统滚动距离</span></span
@@ -303,7 +319,9 @@ onUnmounted(() => {
                   label="滚动速度"
                 />
               </label>
-              <label class="setting-row">
+              <label
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <span
                   ><strong>平滑时长</strong
                   ><span class="setting-description">较短更跟手，较长更柔和</span></span
@@ -318,14 +336,18 @@ onUnmounted(() => {
                   :disabled="!form.smoothScrolling"
                 />
               </label>
-              <label class="setting-row">
+              <label
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <span
                   ><strong>反转纵向滚动</strong
                   ><span class="setting-description">相对于当前系统方向反转</span></span
                 >
                 <input v-model="form.reverseVertical" class="switch" type="checkbox" />
               </label>
-              <label class="setting-row">
+              <label
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <span><strong>反转横向滚动</strong></span>
                 <input v-model="form.reverseHorizontal" class="switch" type="checkbox" />
               </label>
@@ -334,8 +356,13 @@ onUnmounted(() => {
               </p>
             </div>
           </section>
-          <section class="settings-section" aria-labelledby="mouse-buttons-heading">
-            <div class="context-section-heading">
+          <section
+            class="settings-section mt-7 [&>h2]:mb-3"
+            aria-labelledby="mouse-buttons-heading"
+          >
+            <div
+              class="context-section-heading mb-3 flex items-center justify-between gap-4 [&>h2]:text-[15px] [&>h2]:font-medium"
+            >
               <h2 id="mouse-buttons-heading">按键映射</h2>
               <button
                 class="button small"
@@ -361,7 +388,10 @@ onUnmounted(() => {
             <p v-if="status?.logitechError" class="inline-notice" role="status">
               {{ status.logitechError }}
             </p>
-            <div v-if="status?.supported && !status.inputMonitoringGranted" class="setting-row">
+            <div
+              v-if="status?.supported && !status.inputMonitoringGranted"
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+            >
               <span class="setting-description"
                 >罗技额外按键需要「输入监控」权限，授权后重新启动 MTool。</span
               >
@@ -369,12 +399,20 @@ onUnmounted(() => {
                 输入监控设置
               </button>
             </div>
-            <div class="settings-card">
-              <div v-for="button in buttons" :key="button" class="setting-row">
+            <div
+              class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+            >
+              <div
+                v-for="button in buttons"
+                :key="button"
+                class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+              >
                 <strong :id="`mouse-button-${button}`">{{
                   button === 3 ? '中键' : `按键 ${button}`
                 }}</strong>
-                <span class="select-control mouse-action-select">
+                <span
+                  class="select-control mouse-action-select relative inline-flex min-w-0 max-w-full align-middle text-foreground"
+                >
                   <select
                     :value="buttonAction(button)"
                     :aria-labelledby="`mouse-button-${button}`"

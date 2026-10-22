@@ -271,9 +271,18 @@ pub struct ClipboardDetail {
     pub image_data_url: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum AppTheme {
+    #[default]
+    Dracula,
+    GithubLight,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
+    pub theme: AppTheme,
     pub mouse: MouseSettings,
     pub history_limit: u32,
     pub retention_days: u32,
@@ -290,6 +299,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            theme: AppTheme::default(),
             mouse: MouseSettings::default(),
             history_limit: 1000,
             retention_days: 30,

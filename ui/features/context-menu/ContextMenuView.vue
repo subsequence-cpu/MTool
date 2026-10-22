@@ -45,8 +45,10 @@ onUnmounted(() => window.removeEventListener('focus', refresh));
 </script>
 
 <template>
-  <section class="settings-page context-menu-page">
-    <header class="page-heading">
+  <section class="settings-page context-menu-page mx-auto max-w-[900px]">
+    <header
+      class="page-heading mb-[25px] flex items-start justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <h1>右键增强</h1>
       <span class="badge">macOS</span>
     </header>
@@ -54,17 +56,23 @@ onUnmounted(() => window.removeEventListener('focus', refresh));
       {{ error || status?.error }}
     </div>
     <p v-if="status && !status.supported" class="setting-description">仅支持 macOS</p>
-    <section v-else class="settings-section" aria-labelledby="finder-heading">
-      <div class="context-section-heading">
+    <section v-else class="settings-section mt-7 [&>h2]:mb-3" aria-labelledby="finder-heading">
+      <div
+        class="context-section-heading mb-3 flex items-center justify-between gap-4 [&>h2]:text-[15px] [&>h2]:font-medium"
+      >
         <h2 id="finder-heading">Finder 右键菜单</h2>
         <button class="button" :disabled="!desktopAvailable || busy" @click="refresh">
           <AppIcon name="reset" :class="{ 'context-refreshing': busy }" />刷新
         </button>
       </div>
-      <div class="settings-card">
-        <div class="setting-row">
+      <div
+        class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+      >
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
           <strong>Finder 扩展</strong>
-          <div class="context-row-actions">
+          <div class="flex flex-wrap items-center justify-end gap-3 [&>.button]:min-w-[112px]">
             <span class="badge">{{ status ? (status.enabled ? '已启用' : '未启用') : '—' }}</span>
             <button
               class="button"
@@ -75,23 +83,33 @@ onUnmounted(() => window.removeEventListener('focus', refresh));
             </button>
           </div>
         </div>
-        <div class="setting-row">
-          <span class="context-feature"><AppIcon name="file-plus" /><strong>新增文件</strong></span>
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
+          <span class="inline-flex items-center gap-2.5 [&>svg]:text-accent"
+            ><AppIcon name="file-plus" /><strong>新增文件</strong></span
+          >
         </div>
-        <div class="setting-row">
-          <span class="context-feature"
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
+          <span class="inline-flex items-center gap-2.5 [&>svg]:text-accent"
             ><AppIcon name="code" /><strong>使用 VS Code 打开</strong></span
           >
         </div>
-        <div class="setting-row">
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
           <strong>VS Code</strong>
           <span class="badge">{{
             status ? (status.vscodeInstalled ? '已安装' : '未检测到') : '—'
           }}</span>
         </div>
-        <div class="setting-row">
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
           <strong>辅助功能</strong>
-          <div class="context-row-actions">
+          <div class="flex flex-wrap items-center justify-end gap-3 [&>.button]:min-w-[112px]">
             <span class="badge">{{
               status ? (status.accessibilityGranted ? '已授权' : '未授权') : '—'
             }}</span>

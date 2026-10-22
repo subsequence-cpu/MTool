@@ -23,14 +23,14 @@ onMounted(() => dialog.value?.showModal());
       }
     "
   >
-    <div class="dialog-heading">
+    <div class="mb-3 flex items-center justify-between gap-3 [&>h2]:text-[17px]">
       <h2>{{ title }}</h2>
       <button class="icon-button" aria-label="关闭" @click="emit('cancel')">
         <AppIcon name="x" />
       </button>
     </div>
     <p>{{ description }}</p>
-    <div class="dialog-actions">
+    <div class="mt-6 flex justify-end gap-[9px]">
       <button class="button" autofocus @click="emit('cancel')"><AppIcon name="x" />取消</button
       ><button class="button" :class="destructive ? 'danger' : 'primary'" @click="emit('confirm')">
         <AppIcon :name="destructive ? 'trash' : 'check'" />{{ confirmLabel ?? '确认' }}

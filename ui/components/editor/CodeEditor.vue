@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { basicSetup } from 'codemirror';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { tags } from '@lezer/highlight';
+import { editorExtensions } from './extensions';
 
 const props = defineProps<{
   modelValue: string;
@@ -25,74 +23,12 @@ onMounted(() => {
     state: EditorState.create({
       doc: props.modelValue,
       extensions: [
-        basicSetup,
-        EditorView.lineWrapping,
-        EditorState.readOnly.of(Boolean(props.readonly)),
-        EditorView.editable.of(!props.readonly),
-        EditorView.contentAttributes.of({
-          'aria-label': props.label,
-          'aria-readonly': String(Boolean(props.readonly)),
-          role: 'textbox',
-          'aria-multiline': 'true',
-          spellcheck: 'false',
-          tabindex: '0',
+        ...editorExtensions({
+          label: props.label,
+          readonly: props.readonly,
+          onChange: (value) => emit('update:modelValue', value),
         }),
-        EditorView.dragMovesSelection.of(() => false),
         language.of(props.json ? json() : []),
-        EditorView.updateListener.of((update) => {
-          if (update.docChanged) emit('update:modelValue', update.state.doc.toString());
-        }),
-        syntaxHighlighting(
-          HighlightStyle.define([
-            { tag: tags.propertyName, color: '#8be9fd' },
-            { tag: tags.string, color: '#f1fa8c' },
-            { tag: [tags.number, tags.bool, tags.null], color: '#bd93f9' },
-            { tag: tags.comment, color: '#adb6d1' },
-          ]),
-        ),
-        EditorView.theme(
-          {
-            '&': {
-              backgroundColor: 'var(--background)',
-              color: 'var(--foreground)',
-              fontSize: '13px',
-            },
-            '.cm-scroller': {
-              fontFamily: 'var(--font-mono)',
-              lineHeight: '1.9',
-              overflow: 'auto',
-              overscrollBehavior: 'contain',
-            },
-            '.cm-content': {
-              padding: '16px 0',
-              minHeight: '310px',
-              caretColor: 'var(--accent)',
-              userSelect: 'text',
-              WebkitUserSelect: 'text',
-              cursor: 'text',
-            },
-            '.cm-line': { padding: '0 16px' },
-            '.cm-gutters': {
-              backgroundColor: 'var(--background)',
-              color: 'var(--muted)',
-              border: 'none',
-            },
-            '.cm-lineNumbers .cm-gutterElement': { paddingLeft: '12px' },
-            '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'transparent' },
-            '&.cm-focused .cm-activeLine, &.cm-focused .cm-activeLineGutter': {
-              backgroundColor: 'var(--editor-active-line)',
-            },
-            '.cm-selectionBackground': {
-              backgroundColor: 'var(--editor-selection-inactive)',
-            },
-            '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
-              backgroundColor: 'var(--editor-selection)',
-            },
-            '&.cm-focused': { outline: 'none' },
-            '.cm-cursor': { borderLeftColor: 'var(--accent)' },
-          },
-          { dark: true },
-        ),
       ],
     }),
   });
@@ -111,4 +47,4 @@ watch(
 onBeforeUnmount(() => view?.destroy());
 </script>
 
-<template><div ref="container" class="code-editor" /></template>
+<template><div ref="container" class="code-editor min-w-0 max-w-full overflow-hidden" /></template>

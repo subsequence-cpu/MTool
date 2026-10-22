@@ -9,7 +9,7 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
     let clipboard = MenuItem::with_id(app, "clipboard", "剪贴板历史", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出 MTool", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &clipboard, &quit])?;
-    let builder = TrayIconBuilder::new()
+    let builder = TrayIconBuilder::with_id("main-tray")
         .menu(&menu)
         .tooltip("MTool · 本地开发工具箱")
         .show_menu_on_left_click(false)

@@ -18,6 +18,7 @@ fn main() -> std::io::Result<()> {
         ClipboardKind::decl(),
         ClipboardItem::decl(),
         ClipboardDetail::decl(),
+        AppTheme::decl(),
         Settings::decl(),
         AppStatus::decl(),
         Bootstrap::decl(),

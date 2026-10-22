@@ -161,13 +161,13 @@ onUnmounted(() => {
     </header>
     <div
       v-if="feedback || error || appState.status?.storageError"
-      class="inline-notice error popup-notice"
+      class="inline-notice error mx-3 my-[9px]"
       role="alert"
     >
       {{ feedback || error || appState.status?.storageError }}
     </div>
-    <div class="popup-content">
-      <div class="popup-history">
+    <div class="grid min-h-0 flex-1 grid-cols-1">
+      <div class="flex min-h-0 min-w-0 flex-col">
         <div class="popup-subheading" @mousedown.prevent="drag">
           <span>剪贴板历史</span><span>{{ total }} 条记录</span>
         </div>
@@ -201,14 +201,16 @@ onUnmounted(() => {
       </div>
     </div>
     <footer class="popup-footer">
-      <span class="popup-shortcut"
+      <span class="inline-flex items-center gap-[5px] whitespace-nowrap"
         ><kbd><AppIcon name="arrow-up" :size="12" /></kbd
         ><kbd><AppIcon name="arrow-down" :size="12" /></kbd><span>选择</span></span
       >
-      <span class="popup-shortcut"
+      <span class="inline-flex items-center gap-[5px] whitespace-nowrap"
         ><kbd><AppIcon name="return" :size="12" /></kbd><span>复制并关闭</span></span
       >
-      <span class="popup-shortcut"><kbd>Esc</kbd><span>关闭</span></span>
+      <span class="inline-flex items-center gap-[5px] whitespace-nowrap"
+        ><kbd>Esc</kbd><span>关闭</span></span
+      >
     </footer>
   </div>
 </template>

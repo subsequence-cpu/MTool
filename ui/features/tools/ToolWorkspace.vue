@@ -8,20 +8,18 @@ import AppSelect from '../../components/ui/AppSelect.vue';
 import { getSession } from './sessions';
 
 const CodeEditor = defineAsyncComponent(() => import('../../components/editor/CodeEditor.vue'));
+const DiffEditor = defineAsyncComponent(() => import('../../components/editor/DiffEditor.vue'));
 const route = useRoute();
 const tool = computed(() => appState.tools.find((item) => item.id === route.params.toolId));
 const session = computed(() => (tool.value ? getSession(tool.value) : null));
 const showKey = ref(false);
 const modifier = navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl';
 const inputSize = computed(() => new TextEncoder().encode(session.value?.input ?? '').length);
-const secondarySize = computed(
-  () => new TextEncoder().encode(session.value?.secondary ?? '').length,
-);
 
-async function run(): Promise<void> {
+async function run(): Promise<boolean> {
   const current = session.value;
   const selected = tool.value;
-  if (!current || !selected || current.working || !desktopAvailable) return;
+  if (!current || !selected || current.working || !desktopAvailable) return false;
   current.working = true;
   current.error = '';
   const sequence = ++current.sequence;
@@ -34,15 +32,17 @@ async function run(): Promise<void> {
       secondary: current.secondary,
       options: { ...current.options },
     });
-    if (sequence !== current.sequence) return;
+    if (sequence !== current.sequence) return false;
     current.output = result.output;
     current.notice = result.notice;
     current.elapsedMs = Math.round(performance.now() - started);
+    return true;
   } catch (error) {
     if (sequence === current.sequence) {
       current.error = errorMessage(error);
       current.notice = null;
     }
+    return false;
   } finally {
     if (sequence === current.sequence) current.working = false;
   }
@@ -80,6 +80,7 @@ function loadSample(): void {
 async function copyResult(): Promise<void> {
   const current = session.value;
   if (!current) return;
+  if (tool.value?.id === 'diff' && !(await run())) return;
   try {
     await client.copyText(current.output);
     notify('已复制');
@@ -89,6 +90,7 @@ async function copyResult(): Promise<void> {
 }
 
 function keyboard(event: KeyboardEvent): void {
+  if (tool.value?.id === 'diff') return;
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
     event.preventDefault();
     void run();
@@ -100,8 +102,14 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
 
 <template>
   <section v-if="tool && session" class="workspace-page">
-    <RouterLink to="/" class="back-link"><AppIcon name="arrow-left" :size="14" />工具箱</RouterLink>
-    <header class="page-heading">
+    <RouterLink
+      to="/"
+      class="back-link mb-[18px] inline-flex items-center gap-[7px] text-[12px] text-muted"
+      ><AppIcon name="arrow-left" :size="14" />工具箱</RouterLink
+    >
+    <header
+      class="page-heading mb-[25px] flex items-start justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <div>
         <h1>{{ tool.title }}</h1>
         <p class="subtitle">{{ tool.description }}</p>
@@ -115,21 +123,33 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
         <AppIcon name="star" />
       </button>
     </header>
-    <div class="workspace-toolbar">
-      <label class="inline-field"
+    <div class="workspace-toolbar mb-[18px] flex flex-wrap items-center gap-2">
+      <label v-if="tool.id !== 'diff'" class="inline-field"
         ><span class="sr-only">操作</span
         ><AppSelect v-model="session.operation" :icon="tool.icon" :disabled="session.working">
           <option v-for="operation in tool.operations" :key="operation.id" :value="operation.id">
             {{ operation.label }}
           </option>
         </AppSelect></label
-      ><button class="button primary" :disabled="session.working || !desktopAvailable" @click="run">
+      ><button
+        v-if="tool.id !== 'diff'"
+        class="button primary"
+        :disabled="session.working || !desktopAvailable"
+        @click="run"
+      >
         <AppIcon :name="session.working ? 'clock' : 'play'" :size="15" />{{
           session.working ? '处理中…' : '运行'
         }}<kbd>{{ modifier }} ↵</kbd></button
       ><button v-if="session.working" class="button" @click="cancel">
         <AppIcon name="x" />取消等待</button
-      ><span class="toolbar-spacer" /><button
+      ><button
+        v-if="tool.id === 'diff'"
+        class="button"
+        :disabled="session.working || !desktopAvailable"
+        @click="copyResult"
+      >
+        <AppIcon name="copy" :size="15" />复制差异</button
+      ><span class="flex-1 narrow:hidden" /><button
         class="button"
         :disabled="session.working"
         @click="loadSample"
@@ -140,7 +160,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
       </button>
     </div>
     <div v-if="tool.id === 'hash'" class="tool-options">
-      <label class="field"
+      <label class="field flex min-w-0 flex-col gap-1.5"
         ><span>算法</span
         ><AppSelect v-model="session.options.algorithm" icon="fingerprint">
           <option value="sha256">SHA-256</option>
@@ -148,9 +168,11 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
           <option value="sha1">SHA-1</option>
           <option value="md5">MD5</option>
         </AppSelect></label
-      ><label v-if="session.operation === 'hmac'" class="field grow"
+      ><label
+        v-if="session.operation === 'hmac'"
+        class="field flex min-w-[180px] flex-1 flex-col gap-1.5 narrow:min-w-full"
         ><span>HMAC 密钥</span
-        ><span class="input-action"
+        ><span class="input-action flex gap-[5px]"
           ><input
             v-model="session.options.key"
             :type="showKey ? 'text' : 'password'"
@@ -166,35 +188,39 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
       v-if="tool.id === 'timestamp' && session.operation === 'from-timestamp'"
       class="tool-options"
     >
-      <label class="field"
+      <label class="field flex min-w-0 flex-col gap-1.5"
         ><span>输入单位</span
         ><AppSelect v-model="session.options.unit" icon="clock">
           <option value="seconds">秒</option>
           <option value="milliseconds">毫秒</option>
         </AppSelect></label
       >
-      <p class="muted">输出同时展示 UTC、系统本地时区及两种时间戳。</p>
+      <p class="muted text-[12px] text-muted">输出同时展示 UTC、系统本地时区及两种时间戳。</p>
     </div>
     <div v-if="tool.id === 'regex'" class="tool-options">
-      <label class="field grow"
+      <label class="field flex min-w-[180px] flex-1 flex-col gap-1.5 narrow:min-w-full"
         ><span>正则表达式</span
         ><input
           v-model="session.options.pattern"
-          class="mono"
+          class="font-mono"
           spellcheck="false"
           placeholder="例如：\d+"
           maxlength="4096" /></label
-      ><label v-if="session.operation === 'replace'" class="field grow"
+      ><label
+        v-if="session.operation === 'replace'"
+        class="field flex min-w-[180px] flex-1 flex-col gap-1.5 narrow:min-w-full"
         ><span>替换内容（支持 $1、${name}）</span
         ><input v-model="session.options.replacement" spellcheck="false"
       /></label>
-      <p class="option-note">Rust regex 语法，不支持回溯引用和前后查找；位置以 UTF-8 字节计。</p>
+      <p class="w-full text-[11px] text-muted">
+        Rust regex 语法，不支持回溯引用和前后查找；位置以 UTF-8 字节计。
+      </p>
     </div>
     <div v-if="tool.id === 'uuid'" class="tool-options">
-      <label class="field"
+      <label class="field flex min-w-0 flex-col gap-1.5"
         ><span>生成数量</span
         ><input v-model="session.options.count" type="number" min="1" max="100" /></label
-      ><label v-if="session.operation === 'random'" class="field"
+      ><label v-if="session.operation === 'random'" class="field flex min-w-0 flex-col gap-1.5"
         ><span>每条长度</span
         ><input v-model="session.options.length" type="number" min="1" max="1024"
       /></label>
@@ -202,12 +228,18 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
     <p v-if="tool.id === 'timestamp' && session.operation === 'to-timestamp'" class="inline-notice">
       输入须带时区，例如 2026-10-16T09:00:00+08:00。
     </p>
-    <div class="editors" :class="{ 'single-editor': tool.id === 'uuid' }">
-      <section v-if="tool.id !== 'uuid'" class="editor-panel">
-        <header>
-          <span>{{ tool.id === 'diff' ? '原始文本' : '输入' }}</span
-          ><span class="muted">UTF-8</span>
-        </header>
+    <DiffEditor
+      v-if="tool.id === 'diff'"
+      v-model:original="session.input"
+      v-model:modified="session.secondary"
+    />
+    <div
+      v-else
+      class="editors grid grid-cols-2 overflow-hidden rounded-panel border border-solid border-border narrow:grid-cols-1"
+      :class="{ 'single-editor': tool.id === 'uuid' }"
+    >
+      <section v-if="tool.id !== 'uuid'" class="editor-panel min-w-0">
+        <header><span>输入</span><span class="text-[12px] text-muted">UTF-8</span></header>
         <CodeEditor
           v-model="session.input"
           :json="tool.id === 'json' || tool.id === 'jwt'"
@@ -217,12 +249,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
           <span>{{ inputSize.toLocaleString() }} 字节</span>
         </footer>
       </section>
-      <section v-if="tool.id === 'diff'" class="editor-panel">
-        <header><span>修改后文本</span><span class="muted">UTF-8</span></header>
-        <CodeEditor v-model="session.secondary" label="修改后文本" />
-        <footer>{{ secondarySize.toLocaleString() }} 字节</footer>
-      </section>
-      <section v-else class="editor-panel">
+      <section class="editor-panel min-w-0">
         <header>
           <span>输出</span
           ><button
@@ -244,17 +271,6 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
         </footer>
       </section>
     </div>
-    <section v-if="tool.id === 'diff' && session.output" class="editor-panel diff-output">
-      <header>
-        <span>差异结果</span
-        ><button class="button ghost small" @click="copyResult()">
-          <AppIcon name="copy" :size="14" />复制
-        </button>
-      </header>
-      <pre
-        class="diff-content"
-      ><span v-for="(line, index) in session.output.split('\n')" :key="index" :class="{ 'diff-added': line.startsWith('+'), 'diff-removed': line.startsWith('-') }">{{ line }}{{ '\n' }}</span></pre>
-    </section>
     <p v-if="session.error" class="inline-notice error" role="alert">
       <AppIcon name="alert" :size="16" />{{ session.error }}
     </p>
@@ -262,7 +278,7 @@ onUnmounted(() => window.removeEventListener('keydown', keyboard));
       <AppIcon name="info" :size="16" />{{ session.notice }}
     </p>
     <p
-      v-if="!session.error && !session.notice && session.elapsedMs !== null"
+      v-if="tool.id !== 'diff' && !session.error && !session.notice && session.elapsedMs !== null"
       class="success-message"
       role="status"
     >

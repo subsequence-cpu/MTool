@@ -26,7 +26,9 @@ export type ClipboardItem = { id: string, kind: ClipboardKind, preview: string, 
 
 export type ClipboardDetail = { item: ClipboardItem, text: string | null, imageDataUrl: string | null, };
 
-export type Settings = { mouse: MouseSettings, historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
+export type AppTheme = "dracula" | "github-light";
+
+export type Settings = { theme: AppTheme, mouse: MouseSettings, historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
 
 export type AppStatus = { platform: string, storageReady: boolean, storageError: string | null, captureEnabled: boolean, captureError: string | null, shortcutError: string | null, version: string, };
 
@@ -35,6 +37,7 @@ export type Bootstrap = { tools: Array<ToolDefinition>, settings: Settings, stat
 export type ClipboardPage = { items: Array<ClipboardItem>, total: number, hasMore: boolean, };
 
 export const defaultSettings: Settings = {
+  "theme": "dracula",
   "mouse": {
     "enabled": false,
     "smoothScrolling": true,

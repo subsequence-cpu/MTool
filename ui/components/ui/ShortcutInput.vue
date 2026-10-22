@@ -46,14 +46,17 @@ async function finish(cancel = false, restoreFocus = true): Promise<void> {
       @keydown.esc.prevent="finish(true)"
     />
     <span v-else class="shortcut-display" :aria-label="`${label}：${keys.join(' ')}`">
-      <span class="shortcut-keycaps" aria-hidden="true">
+      <span
+        class="shortcut-keycaps inline-flex flex-wrap items-center gap-[5px]"
+        aria-hidden="true"
+      >
         <kbd v-for="(key, index) in keys" :key="index">{{ key }}</kbd>
-        <span v-if="!keys.length" class="muted">设置快捷键</span>
+        <span v-if="!keys.length" class="text-[12px] text-muted">设置快捷键</span>
       </span>
       <button
         ref="button"
         type="button"
-        class="shortcut-edit"
+        class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border-0 border-none bg-transparent p-0 text-muted focus-visible:outline-offset-1 enabled:hover:bg-selection enabled:hover:text-foreground"
         :aria-label="`修改${label}：${keys.join(' ')}`"
         title="修改快捷键"
         @click="edit"

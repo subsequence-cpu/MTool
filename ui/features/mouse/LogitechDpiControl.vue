@@ -63,7 +63,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <label class="setting-row">
+    <label
+      class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+    >
       <strong>{{ device.name }}</strong>
       <MouseSlider
         :model-value="index"

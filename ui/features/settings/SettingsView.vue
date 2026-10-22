@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { appState, notify, updatePreferences } from '../../app/store';
+import { currentTheme } from '../../app/theme';
 import { client, desktopAvailable, errorMessage } from '../../bindings/client';
 import AppIcon from '../../components/ui/AppIcon.vue';
+import AppSelect from '../../components/ui/AppSelect.vue';
 import ConfirmDialog from '../../components/ui/ConfirmDialog.vue';
 import ShortcutInput from '../../components/ui/ShortcutInput.vue';
 import type { Settings } from '../../bindings/types';
@@ -45,6 +47,13 @@ const isMac = navigator.userAgent.includes('Mac');
 let timer: ReturnType<typeof setTimeout> | undefined;
 let disposed = false;
 let syncing = false;
+
+function changeTheme(value: string): void {
+  if (value !== 'dracula' && value !== 'github-light') return;
+  void updatePreferences({ theme: value }).catch((reason: unknown) =>
+    notify(errorMessage(reason), true),
+  );
+}
 
 function snapshot(): EditableSettings {
   return {
@@ -156,8 +165,10 @@ async function clearAll(): Promise<void> {
 </script>
 
 <template>
-  <section class="settings-page">
-    <header class="page-heading">
+  <section class="settings-page mx-auto max-w-[900px]">
+    <header
+      class="page-heading mb-[25px] flex items-start justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <div>
         <h1>设置</h1>
       </div>
@@ -171,18 +182,31 @@ async function clearAll(): Promise<void> {
         重试
       </button>
     </header>
+    <section class="settings-section mt-7 [&>h2]:mb-3">
+      <h2>外观</h2>
+      <div
+        class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+      >
+        <label
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
+          <strong>主题</strong>
+          <AppSelect :model-value="currentTheme" @update:model-value="changeTheme">
+            <option value="dracula">Dracula</option>
+            <option value="github-light">GitHub Light</option>
+          </AppSelect>
+        </label>
+      </div>
+    </section>
     <form @submit.prevent="applySettings">
       <fieldset :disabled="!editable">
-        <section class="settings-section">
+        <section class="settings-section mt-7 [&>h2]:mb-3">
           <h2>通用</h2>
-          <div class="settings-card">
-            <div class="setting-row">
-              <div>
-                <strong>主题</strong>
-              </div>
-              <span class="theme-name"><span class="theme-swatch" />Dracula</span>
-            </div>
-            <label class="setting-row"
+          <div
+            class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+          >
+            <label
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
               ><span
                 ><strong>登录时启动</strong
                 ><span class="setting-description">启动后驻留菜单栏</span></span
@@ -191,7 +215,8 @@ async function clearAll(): Promise<void> {
                 class="switch"
                 type="checkbox"
                 aria-label="登录时启动" /></label
-            ><label class="setting-row"
+            ><label
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
               ><span><strong>记录剪贴板</strong></span
               ><input
                 v-model="form.captureEnabled"
@@ -201,10 +226,14 @@ async function clearAll(): Promise<void> {
             /></label>
           </div>
         </section>
-        <section class="settings-section">
+        <section class="settings-section mt-7 [&>h2]:mb-3">
           <h2>快捷键</h2>
-          <div class="settings-card">
-            <div class="setting-row">
+          <div
+            class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+          >
+            <div
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+            >
               <span><strong>搜索启动台</strong></span
               ><ShortcutInput
                 v-model="form.launcherShortcut"
@@ -212,7 +241,9 @@ async function clearAll(): Promise<void> {
                 :is-mac="isMac"
               />
             </div>
-            <div class="setting-row">
+            <div
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+            >
               <span><strong>剪贴板浮窗</strong></span
               ><ShortcutInput
                 v-model="form.clipboardShortcut"
@@ -222,10 +253,13 @@ async function clearAll(): Promise<void> {
             </div>
           </div>
         </section>
-        <section class="settings-section">
+        <section class="settings-section mt-7 [&>h2]:mb-3">
           <h2>隐私与历史</h2>
-          <div class="settings-card">
-            <label class="setting-row"
+          <div
+            class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+          >
+            <label
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
               ><span
                 ><strong>普通历史数量</strong
                 ><span class="setting-description">50–10000 条，收藏除外</span></span
@@ -235,7 +269,8 @@ async function clearAll(): Promise<void> {
                 min="50"
                 max="10000"
                 aria-label="普通历史数量上限" /></label
-            ><label class="setting-row"
+            ><label
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
               ><span
                 ><strong>保留天数</strong
                 ><span class="setting-description">1–365 天，收藏除外</span></span
@@ -245,7 +280,8 @@ async function clearAll(): Promise<void> {
                 min="1"
                 max="365"
                 aria-label="保留天数" /></label
-            ><label class="setting-row"
+            ><label
+              class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
               ><span
                 ><strong>内容容量上限（MiB）</strong
                 ><span class="setting-description">16–2048 MiB</span></span
@@ -271,10 +307,14 @@ async function clearAll(): Promise<void> {
       </fieldset>
       <p v-if="error" class="inline-notice error" role="alert">{{ error }}</p>
     </form>
-    <section class="settings-section">
+    <section class="settings-section mt-7 [&>h2]:mb-3">
       <h2>存储状态</h2>
-      <div class="settings-card">
-        <div class="setting-row">
+      <div
+        class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+      >
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
           <div>
             <strong>历史数据库</strong>
           </div>
@@ -290,10 +330,14 @@ async function clearAll(): Promise<void> {
         </p>
       </div>
     </section>
-    <section class="settings-section">
+    <section class="settings-section mt-7 [&>h2]:mb-3">
       <h2>数据管理</h2>
-      <div class="settings-card">
-        <div class="setting-row">
+      <div
+        class="settings-card mt-[13px] rounded-panel border border-solid border-border bg-surface px-5"
+      >
+        <div
+          class="setting-row flex items-center justify-between gap-6 py-[17px] narrow:flex-wrap narrow:gap-3"
+        >
           <div>
             <strong>删除全部历史与收藏</strong>
             <p>删除后无法恢复</p>
@@ -304,7 +348,9 @@ async function clearAll(): Promise<void> {
         </div>
       </div>
     </section>
-    <p class="about-line">MTool {{ appState.status?.version ?? '0.1.0' }} · MIT</p>
+    <p class="pt-[30px] text-[11px] text-muted">
+      MTool {{ appState.status?.version ?? '0.1.0' }} · MIT
+    </p>
     <ConfirmDialog
       v-if="confirmClear"
       title="删除全部历史与收藏？"

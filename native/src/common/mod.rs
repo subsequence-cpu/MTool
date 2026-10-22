@@ -4,5 +4,6 @@ pub(crate) mod monitor;
 pub(crate) mod mouse;
 pub(crate) mod shortcuts;
 pub(crate) mod state;
+pub(crate) mod theme;
 pub(crate) mod tray;
 pub(crate) mod windowing;

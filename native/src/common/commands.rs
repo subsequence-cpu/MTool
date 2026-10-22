@@ -1,7 +1,7 @@
 use crate::common::{
     shortcuts,
     state::{lock, unavailable, AppState},
-    windowing,
+    theme, windowing,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use mtool_core::*;
@@ -106,6 +106,9 @@ pub async fn save_settings(
         if previous.mouse != settings.mouse {
             app.state::<super::mouse::MouseService>()
                 .configure(settings.mouse.clone());
+        }
+        if previous.theme != settings.theme {
+            theme::apply(&app, settings.theme);
         }
         let _ = app.emit("settings-changed", ());
         let _ = app.emit("clipboard-changed", ());

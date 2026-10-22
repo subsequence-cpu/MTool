@@ -16,5 +16,5 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["ui/**/*.ts", "ui/**/*.vue", "vite.config.ts"]
+  "include": ["ui/**/*.ts", "ui/**/*.vue", "vite.config.ts", "tailwind.config.ts"]
 }

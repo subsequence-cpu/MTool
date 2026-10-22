@@ -117,7 +117,9 @@ function pinSelected(): void {
 
 <template>
   <section class="clipboard-page">
-    <header class="page-heading">
+    <header
+      class="page-heading mb-[25px] flex items-start justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <div>
         <h1>剪贴板历史</h1>
       </div>
@@ -176,12 +178,12 @@ function pinSelected(): void {
     </div>
     <div v-else class="history-layout">
       <section class="history-list" aria-label="剪贴板历史">
-        <p class="history-count" aria-live="polite">
+        <p class="shrink-0 px-2.5 pb-3 pt-[7px] text-[11px] text-muted" aria-live="polite">
           {{ !items.length && loading ? '正在加载…' : `${total} 条记录` }}
         </p>
         <div
           ref="historyScroll"
-          class="history-scroll"
+          class="history-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-1 [scrollbar-gutter:stable]"
           role="region"
           aria-label="剪贴板记录列表"
           tabindex="0"
@@ -203,8 +205,13 @@ function pinSelected(): void {
               ></span
             ><AppIcon v-if="item.pinned" name="pin" :size="14" />
           </button>
-          <div ref="paginationTarget" class="history-pagination">
-            <button v-if="hasMore" class="button load-more" :disabled="loading" @click="load(true)">
+          <div ref="paginationTarget" class="min-h-px">
+            <button
+              v-if="hasMore"
+              class="button mt-3 flex w-full"
+              :disabled="loading"
+              @click="load(true)"
+            >
               <AppIcon :name="loading ? 'clock' : 'chevron-down'" />{{
                 error ? '重试加载' : loading ? '加载中…' : '加载更多'
               }}
@@ -215,7 +222,7 @@ function pinSelected(): void {
       <section class="history-detail">
         <p v-if="detailError" class="inline-notice error" role="alert">{{ detailError }}</p>
         <template v-if="detail"
-          ><header class="section-heading">
+          ><header class="section-heading mb-3 flex items-center justify-between gap-3">
             <h2>内容预览</h2>
             <span class="badge">{{ detail.item.kind === 'image' ? '图片' : '文本' }}</span>
           </header>
@@ -234,7 +241,7 @@ function pinSelected(): void {
             <dt>记录时间</dt>
             <dd>{{ formatDate(detail.item.createdAt) }}</dd>
           </dl>
-          <div class="history-actions">
+          <div class="flex flex-wrap items-center gap-2">
             <button class="button primary" :disabled="busy" @click="copySelected">
               <AppIcon name="copy" :size="15" />复制</button
             ><button class="button" :disabled="busy" @click="pinSelected">

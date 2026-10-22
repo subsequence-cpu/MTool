@@ -49,7 +49,9 @@ async function openClipboard(): Promise<void> {
         <AppIcon name="x" :size="16" />
       </button>
     </div>
-    <header class="page-heading launcher-heading">
+    <header
+      class="page-heading mb-[30px] flex items-center justify-between gap-5 narrow:flex-wrap narrow:gap-[14px]"
+    >
       <div>
         <h1>工具箱</h1>
       </div>
@@ -57,11 +59,11 @@ async function openClipboard(): Promise<void> {
         <AppIcon name="clipboard" :size="16" />剪贴板浮窗
       </button>
     </header>
-    <section v-if="!query && !onlyFavorites" class="recent-section">
-      <div class="section-heading">
+    <section v-if="!query && !onlyFavorites" class="mb-[30px]">
+      <div class="section-heading mb-3 flex items-center justify-between gap-3">
         <h2>最近使用</h2>
       </div>
-      <div v-if="recents.length" class="recent-actions">
+      <div v-if="recents.length" class="mt-3 flex flex-wrap gap-2">
         <button
           v-for="tool in recents"
           :key="tool.id"
@@ -71,9 +73,9 @@ async function openClipboard(): Promise<void> {
           <AppIcon :name="tool.icon" :size="16" />{{ tool.title }}
         </button>
       </div>
-      <p v-else class="recent-empty">暂无记录</p>
+      <p v-else class="py-1.5 text-[12px] text-muted">暂无记录</p>
     </section>
-    <div class="section-heading tool-list-heading">
+    <div class="section-heading mb-[5px] flex items-center justify-between gap-3">
       <div class="segmented">
         <button
           :aria-pressed="!onlyFavorites"
@@ -89,7 +91,7 @@ async function openClipboard(): Promise<void> {
           <AppIcon name="star" :size="13" />我的收藏
         </button>
       </div>
-      <span class="muted" aria-live="polite">{{ matches.length }} 项工具</span>
+      <span class="text-[12px] text-muted" aria-live="polite">{{ matches.length }} 项工具</span>
     </div>
     <div v-if="matches.length" class="tool-list">
       <article v-for="tool in matches" :key="tool.id" class="tool-row">

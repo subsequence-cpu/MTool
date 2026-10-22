@@ -4,7 +4,7 @@ mod macos;
 #[cfg(windows)]
 mod windows;
 
-use common::{commands, context_menu, monitor, mouse, shortcuts, state, tray, windowing};
+use common::{commands, context_menu, monitor, mouse, shortcuts, state, theme, tray, windowing};
 #[cfg(target_os = "macos")]
 use macos as platform;
 use state::{lock, AppState};
@@ -52,10 +52,16 @@ pub fn run() {
         )
         .setup(|app| {
             let state = Arc::new(AppState::initialize(&app.path().app_data_dir()?));
+            let preferences = state.settings()?;
+            let (native_theme, background) = theme::appearance(preferences.theme);
+            app.set_theme(Some(native_theme));
             app.manage(state.clone());
-            app.manage(mouse::MouseService::new(state.settings()?.mouse));
+            app.manage(mouse::MouseService::new(preferences.mouse));
             for config in &app.config().app.windows {
-                tauri::WebviewWindowBuilder::from_config(app.handle(), config)?.build()?;
+                tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
+                    .theme(Some(native_theme))
+                    .background_color(background)
+                    .build()?;
             }
             if let Err(error) = shortcuts::register(app.handle(), &state.settings()?, None) {
                 *lock(&state.shortcut_error)? = Some(error.message);
@@ -63,6 +69,7 @@ pub fn run() {
             tray::setup(app)?;
             #[cfg(target_os = "macos")]
             macos::panels::prepare(app.handle())?;
+            theme::apply(app.handle(), preferences.theme);
             monitor::start(app.handle().clone(), state);
             if std::env::args().any(|arg| arg == "--autostart") {
                 if let Some(window) = app.get_webview_window("main") {

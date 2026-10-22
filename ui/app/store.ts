@@ -87,7 +87,7 @@ async function refresh(): Promise<void> {
   appState.status = data.status;
 }
 
-export async function refreshStatus(): Promise<void> {
+async function refreshStatus(): Promise<void> {
   appState.status = await client.status();
 }
 

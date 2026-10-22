@@ -3,7 +3,7 @@ import { defineAsyncComponent, onMounted } from 'vue';
 import { appState, initialize } from './store';
 import AppLayout from '../layouts/AppLayout.vue';
 import AppIcon from '../components/ui/AppIcon.vue';
-import appIcon from '../assets/app-icon.svg';
+import { themeIcon } from './theme';
 
 const ClipboardPopup = defineAsyncComponent(
   () => import('../features/clipboard/ClipboardPopup.vue'),
@@ -21,7 +21,7 @@ onMounted(() => {
 <template>
   <ClipboardPreview v-if="windowKind === 'clipboard-preview'" />
   <div v-else-if="!appState.ready" class="boot-screen">
-    <img class="brand-mark" :src="appIcon" alt="MTool" />
+    <img class="block h-10 w-10 shrink-0" :src="themeIcon" alt="MTool" />
     <p>加载中…</p>
   </div>
   <div v-else-if="appState.initializationError" class="boot-screen">

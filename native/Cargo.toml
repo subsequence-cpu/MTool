@@ -27,7 +27,7 @@ tauri-plugin-autostart = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = { version = "0.6", features = ["exception"] }
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSScreen", "NSEvent", "NSApplication", "NSColor", "NSGraphics", "NSWorkspace", "NSRunningApplication"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSScreen", "NSEvent", "NSApplication", "NSColor", "NSGraphics", "NSWorkspace", "NSRunningApplication", "NSImage"] }
 objc2-foundation = "0.3"
 
 core-foundation = "0.10"

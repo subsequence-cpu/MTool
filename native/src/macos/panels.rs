@@ -5,8 +5,9 @@ use objc2::{
     MainThreadOnly, Message,
 };
 use objc2_app_kit::{
-    NSApplication, NSAutoresizingMaskOptions, NSBackingStoreType, NSEvent, NSEventType, NSPanel,
-    NSResponder, NSScreen, NSView, NSWindowCollectionBehavior, NSWindowDelegate, NSWindowStyleMask,
+    NSApplication, NSAutoresizingMaskOptions, NSBackingStoreType, NSColor, NSEvent, NSEventType,
+    NSPanel, NSResponder, NSScreen, NSView, NSWindowCollectionBehavior, NSWindowDelegate,
+    NSWindowStyleMask,
 };
 use objc2_foundation::{NSNotification, NSObject, NSObjectProtocol, NSPoint, NSRect, NSSize};
 use std::{
@@ -154,7 +155,7 @@ impl HostedPanel {
                 | NSWindowCollectionBehavior::IgnoresCycle,
         );
         panel.setLevel(native_host.level());
-        panel.setBackgroundColor(Some(&native_host.backgroundColor()));
+        panel.setBackgroundColor(Some(&NSColor::windowBackgroundColor()));
         panel.setHasShadow(interactive);
         panel.setIgnoresMouseEvents(!interactive);
         if interactive {
