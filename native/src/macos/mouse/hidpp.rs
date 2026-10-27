@@ -51,6 +51,7 @@ pub(super) struct Connection {
     input_pending: bool,
     controls: Vec<(u16, u16)>,
     diverted: BTreeSet<u16>,
+    claimed: BTreeSet<u16>,
     active: BTreeSet<u16>,
     pending: VecDeque<Vec<u8>>,
 }
@@ -75,6 +76,7 @@ impl Connection {
             input_pending: true,
             controls: Vec::new(),
             diverted: BTreeSet::new(),
+            claimed: BTreeSet::new(),
             active: BTreeSet::new(),
             pending: VecDeque::new(),
         };
@@ -297,25 +299,26 @@ impl Connection {
     pub fn configure(&mut self, mut wanted: impl FnMut(u16) -> bool) -> Result<(), String> {
         for (cid, button) in self.controls.clone() {
             let enabled = wanted(button);
-            if enabled == self.diverted.contains(&cid) || self.active.contains(&cid) {
+            let configured = if enabled {
+                self.diverted.contains(&cid)
+            } else {
+                !self.claimed.contains(&cid)
+            };
+            if configured || self.active.contains(&cid) {
                 continue;
             }
             if enabled {
-                let current = self.request(self.feature, 2, &cid.to_be_bytes())?;
-                if current.len() < 3 || current[2] & 1 != 0 {
-                    return Err(format!(
-                        "按键 {button} 正被其他鼠标软件接管，请退出对应软件后重试"
-                    ));
-                }
-                self.diverted.insert(cid);
+                self.claimed.insert(cid);
                 self.set_diversion(cid, true)?;
                 let current = self.request(self.feature, 2, &cid.to_be_bytes())?;
                 if current.len() < 3 || current[2] & 1 == 0 {
                     return Err(format!("按键 {button} 未能启用，请重试"));
                 }
+                self.diverted.insert(cid);
             } else {
                 self.set_diversion(cid, false)?;
                 self.diverted.remove(&cid);
+                self.claimed.remove(&cid);
             }
         }
         Ok(())
@@ -363,10 +366,11 @@ impl Connection {
 
     fn restore(&mut self) -> Result<(), String> {
         let mut failure = None;
-        for cid in self.diverted.clone() {
+        for cid in self.claimed.clone() {
             match self.set_diversion(cid, false) {
                 Ok(()) => {
                     self.diverted.remove(&cid);
+                    self.claimed.remove(&cid);
                 }
                 Err(error) => failure = Some(error),
             }

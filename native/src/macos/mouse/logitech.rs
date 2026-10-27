@@ -212,8 +212,6 @@ fn run(
                             && current.button_action(button) != MouseAction::Default)
                 }) {
                     error = Some(reason);
-                    disconnected.push(key.clone());
-                    continue;
                 }
             }
             match session.connection.poll() {
@@ -230,6 +228,7 @@ fn run(
                 Err(reason) => {
                     error = Some(reason);
                     disconnected.push(key.clone());
+                    continue;
                 }
             }
             if Instant::now() >= session.next_dpi_check && session.connection.take_input_pending() {
