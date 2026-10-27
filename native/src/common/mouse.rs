@@ -12,7 +12,7 @@ pub(crate) struct MouseService;
 
 #[cfg(not(target_os = "macos"))]
 impl MouseService {
-    pub fn new(_settings: MouseSettings) -> Self {
+    pub fn new(_settings: MouseSettings, _dpi: std::collections::BTreeMap<String, u16>) -> Self {
         Self
     }
 
@@ -67,9 +67,35 @@ pub async fn mouse_set_dpi(
     if id.len() > 64 || value == 0 {
         return Err(mtool_core::AppError::invalid("DPI 设置无效"));
     }
-    tauri::async_runtime::spawn_blocking(move || app.state::<MouseService>().set_dpi(id, value))
-        .await
-        .map_err(|_| mtool_core::AppError::new("task_failed", "DPI 设置失败"))?
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<Arc<super::state::AppState>>();
+        let mut persistence = super::state::lock(&state.persistence)?;
+        persistence
+            .store
+            .as_ref()
+            .ok_or_else(super::state::unavailable)?;
+        let mut settings = persistence.settings.clone();
+        settings.logitech_dpi.insert(id.clone(), value);
+        settings.validate()?;
+        let device = app.state::<MouseService>().set_dpi(id, value)?;
+        persistence
+            .store
+            .as_mut()
+            .ok_or_else(super::state::unavailable)?
+            .save_settings(&settings, chrono::Utc::now().timestamp_millis())
+            .map_err(|error| {
+                mtool_core::AppError::new(
+                    "dpi_save_failed",
+                    format!("DPI 已应用，但保存失败：{}", error.message),
+                )
+            })?;
+        persistence.settings = settings;
+        drop(persistence);
+        let _ = app.emit("settings-changed", ());
+        Ok(device)
+    })
+    .await
+    .map_err(|_| mtool_core::AppError::new("task_failed", "DPI 设置失败"))?
 }
 
 #[tauri::command]

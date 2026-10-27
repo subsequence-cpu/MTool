@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { appState, notify, updateMousePreferences } from '../../app/store';
 import { client, desktopAvailable, errorMessage } from '../../bindings/client';
 import { defaultSettings } from '../../bindings/types';
-import type { MouseAction, MouseSettings, MouseStatus } from '../../bindings/types';
+import type { MouseAction, MouseDpi, MouseSettings, MouseStatus } from '../../bindings/types';
 import AppIcon from '../../components/ui/AppIcon.vue';
 import MouseSlider from './MouseSlider.vue';
 import LogitechDpiControl from './LogitechDpiControl.vue';
@@ -99,13 +99,23 @@ async function cancelCapture(): Promise<void> {
 let timer: ReturnType<typeof setInterval> | undefined;
 let disposed = false;
 let refreshing = false;
+let dpiRevision = 0;
+
+function updateDpi(updated: MouseDpi): void {
+  dpiRevision += 1;
+  if (status.value)
+    status.value.logitechDpi = status.value.logitechDpi.map((item) =>
+      item.id === updated.id ? updated : item,
+    );
+}
 
 async function refresh(): Promise<void> {
   if (!desktopAvailable || refreshing || disposed) return;
   refreshing = true;
+  const revision = dpiRevision;
   try {
     const result = await client.mouseStatus();
-    if (!disposed) {
+    if (!disposed && revision === dpiRevision) {
       status.value = result;
       statusError.value = '';
       if (
@@ -275,15 +285,10 @@ onUnmounted(() => {
             v-for="device in status.logitechDpi"
             :key="device.id"
             :device="device"
-            :disabled="!desktopAvailable || !status.inputMonitoringGranted"
-            @updated="
-              (updated) => {
-                if (status)
-                  status.logitechDpi = status.logitechDpi.map((item) =>
-                    item.id === updated.id ? updated : item,
-                  );
-              }
+            :disabled="
+              !desktopAvailable || !status.inputMonitoringGranted || !appState.status?.storageReady
             "
+            @updated="updateDpi"
           />
         </div>
       </section>

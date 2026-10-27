@@ -13,6 +13,7 @@ use core_graphics::{
 };
 use mtool_core::{MouseAction, MouseDpi, MouseSettings, MouseStatus};
 use std::{
+    collections::BTreeMap,
     ffi::c_void,
     panic::{catch_unwind, AssertUnwindSafe},
     ptr,
@@ -173,7 +174,7 @@ pub(crate) struct MouseService {
 }
 
 impl MouseService {
-    pub fn new(settings: MouseSettings) -> Self {
+    pub fn new(settings: MouseSettings, dpi: BTreeMap<String, u16>) -> Self {
         use core_foundation::runloop::{CFRunLoopSourceContext, CFRunLoopSourceCreate};
         let (channel, receiver) = mpsc::channel();
         let (dpi_sender, dpi_receiver) = mpsc::sync_channel(4);
@@ -210,6 +211,7 @@ impl MouseService {
                     worker_sender,
                     worker_runtime,
                     dpi_receiver,
+                    dpi,
                 )
             });
         let worker = match worker {
@@ -422,6 +424,7 @@ fn run(
     sender: EventSender,
     runtime: Arc<Mutex<Runtime>>,
     dpi_receiver: mpsc::Receiver<logitech::DpiRequest>,
+    dpi: BTreeMap<String, u16>,
 ) {
     let run_loop = CFRunLoop::get_current();
     let _ = sender.run_loop.set(run_loop.clone());
@@ -431,6 +434,7 @@ fn run(
         runtime.clone(),
         sender.clone(),
         dpi_receiver,
+        dpi,
     );
     let mut tap: Option<Tap> = None;
     let mut next_check = Instant::now();

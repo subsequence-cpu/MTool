@@ -47,7 +47,7 @@ pub async fn save_settings(
     app: AppHandle,
     window: WebviewWindow,
     state: State<'_, Arc<AppState>>,
-    settings: Settings,
+    mut settings: Settings,
 ) -> Result<Settings> {
     if window.label() != "main" {
         return Err(AppError::new("forbidden", "请在主窗口修改设置"));
@@ -80,6 +80,7 @@ pub async fn save_settings(
         }
         let result = (|| {
             let mut p = lock(&state.persistence)?;
+            settings.logitech_dpi = p.settings.logitech_dpi.clone();
             p.store
                 .as_mut()
                 .ok_or_else(unavailable)?

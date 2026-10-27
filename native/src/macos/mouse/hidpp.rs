@@ -48,6 +48,7 @@ pub(super) struct Connection {
     pub dpi: Vec<SensorDpi>,
     pub dpi_error: Option<String>,
     dpi_changed: bool,
+    input_pending: bool,
     controls: Vec<(u16, u16)>,
     diverted: BTreeSet<u16>,
     active: BTreeSet<u16>,
@@ -71,6 +72,7 @@ impl Connection {
             dpi: Vec::new(),
             dpi_error: None,
             dpi_changed: false,
+            input_pending: true,
             controls: Vec::new(),
             diverted: BTreeSet::new(),
             active: BTreeSet::new(),
@@ -118,6 +120,29 @@ impl Connection {
 
     pub fn buttons(&self) -> Vec<u16> {
         self.controls.iter().map(|(_, button)| *button).collect()
+    }
+
+    pub fn identity(&mut self) -> Option<String> {
+        let feature = self.request(0, 0, &[0x00, 0x03, 0]).ok()?[0];
+        if feature == 0 {
+            return None;
+        }
+        let reply = self.request(feature, 0, &[]).ok()?;
+        let unit = reply.get(1..5)?;
+        if unit.iter().all(|byte| *byte == 0) || unit.iter().all(|byte| *byte == 0xff) {
+            return None;
+        }
+        Some(format!(
+            "logitech-{}",
+            unit.iter()
+                .chain(reply.get(7..13)?)
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        ))
+    }
+
+    pub fn take_input_pending(&mut self) -> bool {
+        std::mem::take(&mut self.input_pending)
     }
 
     fn discover_dpi(&mut self) -> Result<(), String> {
@@ -199,6 +224,25 @@ impl Connection {
             return Err("鼠标未应用该 DPI，请检查板载配置或其他鼠标软件".into());
         }
         Ok(())
+    }
+
+    pub fn keep_dpi(&mut self, sensor: u8, value: u16) -> Result<(), String> {
+        let Some(index) = self.dpi.iter().position(|dpi| dpi.sensor == sensor) else {
+            return Err("未找到罗技 DPI 传感器".into());
+        };
+        if !self.dpi[index].values.contains(&value) {
+            return Err("保存的 DPI 不在设备支持的档位中".into());
+        }
+        let previous = self.dpi[index].current;
+        let current = self.read_dpi(sensor)?;
+        self.dpi[index].current = current;
+        let result = if current == value {
+            Ok(())
+        } else {
+            self.set_dpi(sensor, value)
+        };
+        self.dpi_changed |= previous != self.dpi[index].current;
+        result
     }
 
     fn request(&mut self, feature: u8, function: u8, params: &[u8]) -> Result<Vec<u8>, String> {
@@ -294,6 +338,7 @@ impl Connection {
                 }
                 &buffer[..length]
             };
+            self.input_pending = true;
             self.dpi_notification(report);
             if let Some(next) = button_state(report, self.index, self.feature) {
                 for cid in self.active.difference(&next) {

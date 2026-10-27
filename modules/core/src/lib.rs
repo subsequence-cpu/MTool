@@ -284,6 +284,7 @@ pub enum AppTheme {
 pub struct Settings {
     pub theme: AppTheme,
     pub mouse: MouseSettings,
+    pub logitech_dpi: BTreeMap<String, u16>,
     pub history_limit: u32,
     pub retention_days: u32,
     pub max_storage_mb: u32,
@@ -301,6 +302,7 @@ impl Default for Settings {
         Self {
             theme: AppTheme::default(),
             mouse: MouseSettings::default(),
+            logitech_dpi: BTreeMap::new(),
             history_limit: 1000,
             retention_days: 30,
             max_storage_mb: 512,
@@ -318,6 +320,18 @@ impl Default for Settings {
 impl Settings {
     pub fn validate(&self) -> Result<()> {
         self.mouse.validate()?;
+        if self.logitech_dpi.len() > 64
+            || self.logitech_dpi.iter().any(|(id, value)| {
+                id.is_empty()
+                    || id.len() > 64
+                    || !id
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                    || *value == 0
+            })
+        {
+            return Err(AppError::invalid("保存的罗技 DPI 设置无效"));
+        }
         if !(50..=10_000).contains(&self.history_limit)
             || !(1..=365).contains(&self.retention_days)
             || !(16..=2048).contains(&self.max_storage_mb)

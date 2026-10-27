@@ -3,7 +3,6 @@ use mtool_core::{MouseAction, MouseDpi, MouseSettings};
 use std::{
     collections::BTreeMap,
     ffi::CString,
-    hash::{DefaultHasher, Hash, Hasher},
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc::{Receiver, SyncSender},
@@ -37,6 +36,7 @@ impl Service {
         runtime: Arc<Mutex<Runtime>>,
         sender: EventSender,
         dpi_receiver: Receiver<DpiRequest>,
+        dpi: BTreeMap<String, u16>,
     ) -> Self {
         let settings = Arc::new(Mutex::new(settings));
         let stop = Arc::new(AtomicBool::new(false));
@@ -52,6 +52,7 @@ impl Service {
                     worker_runtime.clone(),
                     sender,
                     dpi_receiver,
+                    dpi,
                 ) {
                     if let Ok(mut state) = worker_runtime.lock() {
                         state.logitech_error = Some(error);
@@ -95,17 +96,17 @@ type DeviceKey = (CString, u8);
 struct Session {
     connection: hidpp::Connection,
     name: String,
+    identity: String,
+    next_dpi_check: Instant,
 }
 
-fn dpi_id(key: &DeviceKey, sensor: u8) -> String {
-    let mut hash = DefaultHasher::new();
-    key.hash(&mut hash);
-    format!("{:016x}-{sensor}", hash.finish())
+fn dpi_id(session: &Session, sensor: u8) -> String {
+    format!("{}-{sensor}", session.identity)
 }
 
-fn dpi_status(key: &DeviceKey, session: &Session, dpi: &hidpp::SensorDpi) -> MouseDpi {
+fn dpi_status(session: &Session, dpi: &hidpp::SensorDpi) -> MouseDpi {
     MouseDpi {
-        id: dpi_id(key, dpi.sensor),
+        id: dpi_id(session, dpi.sensor),
         name: if session.connection.dpi.len() > 1 {
             format!("{} · 传感器 {}", session.name, dpi.sensor + 1)
         } else {
@@ -118,13 +119,13 @@ fn dpi_status(key: &DeviceKey, session: &Session, dpi: &hidpp::SensorDpi) -> Mou
 
 fn dpi_devices(sessions: &BTreeMap<DeviceKey, Session>) -> Vec<MouseDpi> {
     sessions
-        .iter()
-        .flat_map(|(key, session)| {
+        .values()
+        .flat_map(|session| {
             session
                 .connection
                 .dpi
                 .iter()
-                .map(|dpi| dpi_status(key, session, dpi))
+                .map(|dpi| dpi_status(session, dpi))
         })
         .collect()
 }
@@ -136,16 +137,17 @@ fn apply_dpi(
     if Instant::now() >= request.deadline {
         return Err("DPI 设置请求已超时，请重试".into());
     }
-    for (key, session) in sessions {
+    for session in sessions.values_mut() {
         if let Some(index) = session
             .connection
             .dpi
             .iter()
-            .position(|dpi| dpi_id(key, dpi.sensor) == request.id)
+            .position(|dpi| dpi_id(session, dpi.sensor) == request.id)
         {
             let sensor = session.connection.dpi[index].sensor;
             session.connection.set_dpi(sensor, request.value)?;
-            return Ok(dpi_status(key, session, &session.connection.dpi[index]));
+            session.next_dpi_check = Instant::now() + Duration::from_secs(2);
+            return Ok(dpi_status(session, &session.connection.dpi[index]));
         }
     }
     Err("鼠标已断开或不支持硬件 DPI 调节".into())
@@ -157,6 +159,7 @@ fn run(
     runtime: Arc<Mutex<Runtime>>,
     sender: EventSender,
     dpi_receiver: Receiver<DpiRequest>,
+    mut dpi: BTreeMap<String, u16>,
 ) -> Result<(), String> {
     let discovery = Discovery::new(stop.clone())?;
     let mut sessions: BTreeMap<DeviceKey, Session> = BTreeMap::new();
@@ -169,7 +172,7 @@ fn run(
             publish_devices = true;
             match message {
                 Discovered::Connected(key, session) => {
-                    sessions.insert(key, session);
+                    sessions.insert(key, *session);
                     next_configure = Instant::now();
                 }
                 Discovered::Status { name, error } => {
@@ -180,6 +183,9 @@ fn run(
         }
         if let Ok(request) = dpi_receiver.try_recv() {
             let result = apply_dpi(&mut sessions, &request);
+            if let Ok(device) = &result {
+                dpi.insert(device.id.clone(), device.current);
+            }
             if let Ok(mut state) = runtime.lock() {
                 state.logitech_dpi = dpi_devices(&sessions);
             }
@@ -224,6 +230,27 @@ fn run(
                 Err(reason) => {
                     error = Some(reason);
                     disconnected.push(key.clone());
+                }
+            }
+            if Instant::now() >= session.next_dpi_check && session.connection.take_input_pending() {
+                session.next_dpi_check = Instant::now() + Duration::from_secs(2);
+                let wanted: Vec<_> = session
+                    .connection
+                    .dpi
+                    .iter()
+                    .filter_map(|sensor| {
+                        dpi.get(&dpi_id(session, sensor.sensor))
+                            .map(|value| (sensor.sensor, *value))
+                    })
+                    .collect();
+                if !wanted.is_empty() {
+                    let result = wanted
+                        .into_iter()
+                        .try_for_each(|(sensor, value)| session.connection.keep_dpi(sensor, value));
+                    session.connection.dpi_error = result.err();
+                }
+                if session.connection.dpi_error.is_some() {
+                    session.next_dpi_check = Instant::now() + Duration::from_secs(5);
                 }
             }
             publish_devices |= session.connection.take_dpi_changed();

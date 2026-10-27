@@ -28,7 +28,7 @@ export type ClipboardDetail = { item: ClipboardItem, text: string | null, imageD
 
 export type AppTheme = "dracula" | "github-light";
 
-export type Settings = { theme: AppTheme, mouse: MouseSettings, historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
+export type Settings = { theme: AppTheme, mouse: MouseSettings, logitechDpi: { [key in string]?: number }, historyLimit: number, retentionDays: number, maxStorageMb: number, excludedApps: Array<string>, captureEnabled: boolean, launchAtLogin: boolean, clipboardShortcut: string, launcherShortcut: string, favorites: Array<ToolId>, recentTools: Array<ToolId>, };
 
 export type AppStatus = { platform: string, storageReady: boolean, storageError: string | null, captureEnabled: boolean, captureError: string | null, shortcutError: string | null, version: string, };
 
@@ -50,6 +50,7 @@ export const defaultSettings: Settings = {
     "forwardButton": "forward",
     "extraButtons": {}
   },
+  "logitechDpi": {},
   "historyLimit": 1000,
   "retentionDays": 30,
   "maxStorageMb": 512,

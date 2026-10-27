@@ -56,7 +56,10 @@ pub fn run() {
             let (native_theme, background) = theme::appearance(preferences.theme);
             app.set_theme(Some(native_theme));
             app.manage(state.clone());
-            app.manage(mouse::MouseService::new(preferences.mouse));
+            app.manage(mouse::MouseService::new(
+                preferences.mouse,
+                preferences.logitech_dpi,
+            ));
             for config in &app.config().app.windows {
                 tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
                     .theme(Some(native_theme))

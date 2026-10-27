@@ -2,6 +2,7 @@ use super::{hidpp, DeviceKey, Session};
 use hidapi::{BusType, HidApi};
 use std::{
     collections::BTreeSet,
+    hash::{DefaultHasher, Hash, Hasher},
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc::{self, Receiver, SyncSender, TrySendError},
@@ -12,7 +13,7 @@ use std::{
 };
 
 pub(super) enum Discovered {
-    Connected(DeviceKey, Session),
+    Connected(DeviceKey, Box<Session>),
     Status {
         name: Option<String>,
         error: Option<String>,
@@ -139,9 +140,25 @@ fn discover(
                     })
                     .and_then(|device| hidpp::Connection::discover(device, *index));
                 match result {
-                    Ok(connection) => {
+                    Ok(mut connection) => {
+                        let identity = connection.identity().unwrap_or_else(|| {
+                            let mut hash = DefaultHasher::new();
+                            device.vendor_id().hash(&mut hash);
+                            device.product_id().hash(&mut hash);
+                            if let Some(serial) =
+                                device.serial_number().filter(|serial| !serial.is_empty())
+                            {
+                                serial.hash(&mut hash);
+                                index.hash(&mut hash);
+                            } else {
+                                key.hash(&mut hash);
+                            }
+                            format!("{:016x}", hash.finish())
+                        });
                         let session = Session {
                             connection,
+                            identity,
+                            next_dpi_check: Instant::now(),
                             name: device
                                 .product_string()
                                 .unwrap_or("Logitech Mouse")
@@ -150,7 +167,8 @@ fn discover(
                         if let Ok(mut connected) = connected.lock() {
                             connected.insert(key.clone());
                         }
-                        match sender.try_send(Discovered::Connected(key.clone(), session)) {
+                        match sender.try_send(Discovered::Connected(key.clone(), Box::new(session)))
+                        {
                             Ok(()) => {}
                             Err(error) => {
                                 if let Ok(mut connected) = connected.lock() {
